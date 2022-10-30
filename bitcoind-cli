@@ -5,10 +5,10 @@ TESTNET_DIR=$BITCOIN_DIR/testnet3
 BITCOIN_CONF=$BITCOIN_DIR/bitcoin.conf
 
 PID_FILE=$BITCOIN_DIR/bitcoind.pid
-export LOG_FILE=$BITCOIN_DIR/debug.log
+LOG_FILE=$BITCOIN_DIR/debug.log
 
 TESTNET_PID_FILE=$BITCOIN_DIR/testnet3/bitcoind.pid
-export TESTNET_LOG_FILE=$BITCOIN_DIR/testnet3/debug.log
+TESTNET_LOG_FILE=$BITCOIN_DIR/testnet3/debug.log
 
 ARGS=($@)
 ARGS_LENGTH=${#ARGS}
