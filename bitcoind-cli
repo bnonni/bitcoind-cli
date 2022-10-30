@@ -154,6 +154,16 @@ start_bitcoind_testnet () {
 
 # ---- STOP ---- #
 
+stop_both () {
+  stop_bitcoind;
+  stop_bitcoind_testnet;
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+    echo "Logging disabled!"
+  else
+    log;
+  fi
+}
+
 stop_bitcoind () {
   if [ -e "$PID_FILE" ]; then
     /usr/local/bin/bitcoin-cli -conf=$CONF stop
@@ -184,25 +194,25 @@ stop_bitcoind_testnet () {
 
 info () {
   case $NETWORK in
-    both|"") if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
-            echo "bitcoind PID: $PID";
-            echo "bitcoind testnet PID: $TESTNET_PID";
-          else
-            echo "PID files not detected at"$'\n'\
-                 $'\t'"$PID_FILE"$'\n'\
-                 $'\t'"$TESTNET_PID_FILE!"$'\n'\
-                 "Are you sure bitcoind is running on mainnet and/or testnet?"
-          fi;;
-    mainnet) if [[ -e "$PID_FILE" ]]; then
-               echo "bitcoind PID: $PID";
-             else
-               echo "PID file not detected at"$'\n'"$PID_FILE"$'\n'"Are you sure bitcoind is running on mainnet?"
-             fi;;
-    testnet) if [[ -e "$TESTNET_PID_FILE" ]]; then
-               echo "bitcoind testnet PID: $TESTNET_PID";
-             else
-               echo "PID file not detected at"$'\n'"$TESTNET_PID_FILE"$'\n'"Are you sure bitcoind is running on testnet?"
-             fi;;
+    both|"")  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
+                echo "bitcoind PID: $PID";
+                echo "bitcoind testnet PID: $TESTNET_PID";
+              else
+                echo "PID files not detected at"$'\n'\
+                $'\t'"$PID_FILE"$'\n'\
+                $'\t'"$TESTNET_PID_FILE!"$'\n'\
+                "Are you sure bitcoind is running on mainnet and/or testnet?"
+              fi;;
+    mainnet)  if [[ -e "$PID_FILE" ]]; then
+                echo "bitcoind PID: $PID";
+              else
+                echo "PID file not detected at"$'\n'"$PID_FILE"$'\n'"Are you sure bitcoind is running on mainnet?"
+              fi;;
+    testnet)  if [[ -e "$TESTNET_PID_FILE" ]]; then
+                echo "bitcoind testnet PID: $TESTNET_PID";
+              else
+                echo "PID file not detected at"$'\n'"$TESTNET_PID_FILE"$'\n'"Are you sure bitcoind is running on testnet?"
+              fi;;
     *) echo "Network arg missing or improperly passed!"; exit 1;;
   esac
 }
