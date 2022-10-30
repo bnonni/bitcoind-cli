@@ -1,0 +1,159 @@
+#!/bin/bash
+BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
+BITCOIN_DIR=$BLOCKCHAIN_DIR/.bitcoin
+TESTNET_DIR=$BITCOIN_DIR/testnet3
+BITCOIN_CONF=$BITCOIN_DIR/bitcoin.conf
+
+PID_FILE=$BITCOIN_DIR/bitcoind.pid
+export LOG_FILE=$BITCOIN_DIR/debug.log
+
+TESTNET_PID_FILE=$BITCOIN_DIR/testnet3/bitcoind.pid
+export TESTNET_LOG_FILE=$BITCOIN_DIR/testnet3/debug.log
+
+ARGS=($@)
+ARGS_LENGTH=${#ARGS}
+SUBCOMMAND=${ARGS[0]}
+NETWORK=${ARGS[1]}
+LOG=${ARGS[2]}
+
+print_help () {
+  echo "NAME:"\
+  $'\n'$'\t'"bitcoind-cli: control script for starting bitcoind"$'\n'$'\n'\
+  "USAGE:"$'\n'$'\t'"bitcoind-cli [subcommand] [-argument] | [-option | --option]"$'\n'\
+  $'\t'"bitcoind-cli [ help | -help | --help]"$'\n'\
+  $'\t'"bitcoind-cli start [-both | -mainnet | -testnet] [-l | --log]"$'\n'\
+  $'\t'"bitcoind-cli stop [-both | -mainnet | -testnet] [-l | --log]"$'\n'\
+  $'\t'"Examples:"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start                       -> start bitcoind mainnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -both                 -> start bitcoind testnet and mainnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -testnet              -> start bitcoind testnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -mainnet              -> start bitcoind mainnet, logging on"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -both    [-l | --log] -> start bitcoind testnet and mainnet, logging on"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -mainnet [-l | --log] -> start bitcoind mainnet, logging on"$'\n'\
+  $'\t'$'\t'"bitcoind-cli start -testnet [-l | --log] -> start bitcoind testnet, logging on"$'\n'\
+  $'\t'$'\t'"bitcoind-cli stop                        -> stop bitcoind mainnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli stop -both                  -> stop bitcoind testnet and mainnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli stop -testnet               -> stop bitcoind testnet, logging off"$'\n'\
+  $'\t'$'\t'"bitcoind-cli stop -mainnet               -> stop bitcoind mainnet, logging on"$'\n'\
+  $'\n'"VERSION:"$'\n'$'\t'"0.0.1";
+  exit 0;
+}
+
+tail_log () {
+  if [[ $LOG == "-l" || $LOG == "--log" ]]; then
+    echo "Logging enabled"
+      if [[ "$NETWORK" == "-both" ]]; then
+        echo "Logging mainnet $LOG_FILE"
+        tail -f $LOG_FILE
+        echo "Logging testnet $TESTNET_LOG_FILE"
+        # osascript -e 'tell application "Terminal" to do script "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"'
+        # does not work, need another command
+      elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
+        echo "Logging mainnet $LOG_FILE"
+        start_bitcoind;
+      else
+        echo "Logging testnet $TESTNET_LOG_FILE"
+        start_bitcoind_testnet;
+      fi
+  fi;
+}
+
+start_both () {
+  start_bitcoind;
+  start_bitcoind_testnet;
+  tail_log;
+}
+
+start_bitcoind () {
+  if [ ! -e "$PID_FILE" ]; then
+    /usr/local/bin/bitcoind -conf=$CONF  
+    echo "Running bitcoind from $BITCOIN_DIR"
+  else
+    echo "Already running bitcoin on mainnet from $BITCOIN_DIR"
+  fi
+
+  PID=$(cat $PID_FILE)
+  echo "bitcoind PID: $PID";
+}
+
+start_bitcoind_testnet () {
+  if [ ! -e "$TESTNET_PID_FILE" ]; then
+    /usr/local/bin/bitcoind -testnet -conf=$CONF
+    echo "Running bitcoind -testnet from $BITCOIN_DIR"
+  else
+    echo "Already running bitcoind -testnet from $BITCOIN_DIR"
+  fi  
+
+  TESTNET_PID=$(cat $TESTNET_PID_FILE)
+  echo "bitcoind -testnet PID: $TESTNET_PID"
+}
+
+stop_both () {
+  stop_bitcoind;
+  stop_bitcoind_testnet;
+}
+
+stop_bitcoind () {
+  if [ -e "$PID_FILE" ]; then
+    /usr/local/bin/bitcoin-cli -conf=$CONF stop
+    # do check for bitcoind still starting
+    # if kill -9, must remove .pid files
+    echo "Stopping bitcoind from $BITCOIN_DIR"
+    PID=$(cat $PID_FILE)
+    echo "bitcoind PID $PID stopped!";
+  else
+    echo "$PID_FILE file not detected! Are you sure bitcoind is running on mainnet?"
+  fi
+}
+
+stop_bitcoind_testnet () {
+ if [ -e "$TESTNET_PID_FILE" ]; then
+    /usr/local/bin/bitcoin-cli -testnet -conf=$CONF stop
+    # do check for bitcoind still starting
+    # if kill -9, must remove .pid files
+    echo "Stopping bitcoind testnet from $BITCOIN_DIR"
+    TESTNET_PID=$(cat $TESTNET_PID_FILE)
+    echo "bitcoind PID $TESTNET_PID stopped!";
+  else
+    echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
+  fi
+}
+
+start () {
+  if [[ "$NETWORK" == "-both" ]]; then
+      start_both;
+    elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
+      start_bitcoind;
+    else
+      start_bitcoind_testnet;
+  fi
+}
+
+stop () {
+  if [[ "$NETWORK" == "-both" ]]; then
+      stop_both;
+    elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
+      stop_bitcoind;
+    else
+      stop_bitcoind_testnet;
+  fi
+}
+
+if [[ -z $SUBCOMMAND ]]; then
+  echo "No command passed!"
+  exit 1;
+fi
+
+if [[ $SUBCOMMAND == "-h" || $SUBCOMMAND == "--help" || $SUBCOMMAND == "help" ]]; then
+  print_help;
+fi
+
+if [ -d "$BLOCKCHAIN_DIR" ]; then
+  if [[ $SUBCOMMAND == "start" ]]; then
+    start;
+  elif [[ $SUBCOMMAND == "stop" ]]; then
+    stop;
+  else
+    echo "Unknown command!"
+  fi
+fi
