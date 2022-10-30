@@ -1,97 +1,158 @@
 #!/bin/bash
+# ------------- VARS ------------- #
 BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
 BITCOIN_DIR=$BLOCKCHAIN_DIR/.bitcoin
 TESTNET_DIR=$BITCOIN_DIR/testnet3
 BITCOIN_CONF=$BITCOIN_DIR/bitcoin.conf
 
 PID_FILE=$BITCOIN_DIR/bitcoind.pid
+PID=$(cat $PID_FILE)
 LOG_FILE=$BITCOIN_DIR/debug.log
 
 TESTNET_PID_FILE=$BITCOIN_DIR/testnet3/bitcoind.pid
+TESTNET_PID=$(cat $TESTNET_PID_FILE)
 TESTNET_LOG_FILE=$BITCOIN_DIR/testnet3/debug.log
 
+# ------------- ARGS ------------- #
+
 ARGS=($@)
-ARGS_LENGTH=${#ARGS}
 SUBCOMMAND=${ARGS[0]}
-NETWORK=${ARGS[1]}
+NETWORK_ARG=${ARGS[1]}
+NETWORK=$(echo "$NETWORK_ARG" | tr -d -)
 LOG=${ARGS[2]}
 
+if [[ $NETWORK_ARG == "-n" || $NETWORK_ARG == "--network" ]]; then
+  NETWORK_FLAG=1
+  NETWORK=${ARGS[2]}
+  LOG=${ARGS[3]}
+fi
+
+# ------------- HELP ------------- #
+
 print_help () {
-  echo "NAME:"\
-  $'\n'$'\t'"bitcoind-cli: control script for starting bitcoind"$'\n'$'\n'\
-  "USAGE:"$'\n'$'\t'"bitcoind-cli [subcommand] [-argument] | [-option | --option]"$'\n'\
-  $'\t'"bitcoind-cli [ help | -help | --help]"$'\n'\
-  $'\t'"bitcoind-cli start [-both | -mainnet | -testnet] [-l | --log]"$'\n'\
-  $'\t'"bitcoind-cli stop [-both | -mainnet | -testnet] [-l | --log]"$'\n'\
-  $'\t'"Examples:"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start                       -> start bitcoind mainnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -both                 -> start bitcoind testnet and mainnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -testnet              -> start bitcoind testnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -mainnet              -> start bitcoind mainnet, logging on"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -both    [-l | --log] -> start bitcoind testnet and mainnet, logging on"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -mainnet [-l | --log] -> start bitcoind mainnet, logging on"$'\n'\
-  $'\t'$'\t'"bitcoind-cli start -testnet [-l | --log] -> start bitcoind testnet, logging on"$'\n'\
-  $'\t'$'\t'"bitcoind-cli stop                        -> stop bitcoind mainnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli stop -both                  -> stop bitcoind testnet and mainnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli stop -testnet               -> stop bitcoind testnet, logging off"$'\n'\
-  $'\t'$'\t'"bitcoind-cli stop -mainnet               -> stop bitcoind mainnet, logging on"$'\n'\
-  $'\n'"VERSION:"$'\n'$'\t'"0.0.1";
+  echo "NAME:"$'\n'$'\t'\
+"Bitcoind CLI: control script for starting bitcoind"$'\n'$'\n'\
+"COMMAND:"$'\n'$'\t'\
+"bitcoind-cli: control script for starting bitcoind"$'\n'$'\n'\
+"SUBCOMMANDS:"$'\n'$'\t'\
+"help:    show help"$'\n'$'\t'\
+"start:   start bitcoind"$'\n'$'\t'\
+"stop:    stop bitcoind"$'\n'$'\t'\
+"process: print process ID(s)"$'\n'$'\n'$'\n'\
+"USAGE:"$'\n'$'\t'"bitcoind-cli [subcommand] [-argument] [-option | --option]"$'\n'$'\t'\
+"bitcoind-cli [help | -help | --help]"$'\n'$'\t'\
+"bitcoind-cli start [-both | -mainnet | -testnet] [-l | -log | --log]"$'\n'$'\t'\
+"bitcoind-cli stop  [-both | -mainnet | -testnet] [-l | -log | --log]"$'\n'$'\n'\
+"EXAMPLES:"$'\n'$'\t'\
+"bitcoind-cli start                                                          -> start bitcoind mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli start [-both | -testnet | -mainnet]                            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli start [-both | -testnet | -mainnet] [-l | -log | --log]        -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli start [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli stop                                                           -> stop bitcoind mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli stop  [-both | -testnet | -mainnet]                            -> stop bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli stop  [-both | -testnet | -mainnet] [-l | -log | --log]        -> stop bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
+"bitcoind-cli stop  [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'$'\n'\
+"VERSION:"$'\n'$'\t'\
+"0.0.1"$'\n';
   exit 0;
 }
 
-tail_log () {
-  if [[ $LOG == "-l" || $LOG == "--log" ]]; then
-    echo "Logging enabled"
-      if [[ "$NETWORK" == "-both" ]]; then
-        echo "Logging mainnet $LOG_FILE"
-        tail -f $LOG_FILE
-        echo "Logging testnet $TESTNET_LOG_FILE"
-        # osascript -e 'tell application "Terminal" to do script "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"'
-        # does not work, need another command
-      elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
-        echo "Logging mainnet $LOG_FILE"
-        start_bitcoind;
-      else
-        echo "Logging testnet $TESTNET_LOG_FILE"
-        start_bitcoind_testnet;
-      fi
-  fi;
+# ------------- LOG ------------- #
+
+log () {
+  echo "Logging enabled!"
+  case $NETWORK in
+    both|"") log_both;;
+    mainnet) log_mainnet;;
+    testnet) log_testnet;;
+    *) echo "Network arg missing or improperly passed!"
+        exit 1;;
+  esac;
 }
+
+log_both () {
+  echo "Logging mainnet $LOG_FILE"
+  tail -f $LOG_FILE
+  echo "Logging testnet $TESTNET_LOG_FILE"
+  tmux new-session -d -s testnet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"
+  tmux attach;
+}
+
+log_mainnet () {
+  echo "Logging mainnet $LOG_FILE"
+  tail -f $LOG_FILE;
+}
+
+log_testnet () {
+  echo "Logging testnet $TESTNET_LOG_FILE"
+  tail -f $TESTNET_LOG_FILE;
+}
+
+# ------------- START / STOP ------------- #
+
+start_stop () {
+  case $SUBCOMMAND in
+      start) case $NETWORK in
+              both) start_both;;
+              mainnet) start_bitcoind;;
+              testnet) start_bitcoind_testnet;;
+              *) echo "Network arg missing or improperly passed!"; exit 1;;
+            esac;;
+      stop) case $NETWORK in
+              both) stop_both;;
+              mainnet) stop_bitcoind;;
+              testnet) stop_bitcoind_testnet;;
+              *) echo "Network arg missing or improperly passed!"; exit 1;;
+            esac;;
+      *) echo "Subcommand missing or improperly passed!"; exit 1;;
+    esac
+}
+
+# ---- START ---- #
 
 start_both () {
   start_bitcoind;
   start_bitcoind_testnet;
-  tail_log;
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+    echo "Logging disabled!"
+  else
+    log;
+  fi
 }
 
 start_bitcoind () {
   if [ ! -e "$PID_FILE" ]; then
-    /usr/local/bin/bitcoind -conf=$CONF  
+    /usr/local/bin/bitcoind -conf=$CONF
     echo "Running bitcoind from $BITCOIN_DIR"
   else
     echo "Already running bitcoin on mainnet from $BITCOIN_DIR"
   fi
-
-  PID=$(cat $PID_FILE)
   echo "bitcoind PID: $PID";
+  
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+    echo "Logging disabled!"
+  else
+    log;
+  fi
 }
 
 start_bitcoind_testnet () {
   if [ ! -e "$TESTNET_PID_FILE" ]; then
     /usr/local/bin/bitcoind -testnet -conf=$CONF
-    echo "Running bitcoind -testnet from $BITCOIN_DIR"
+    echo "Running bitcoind testnet from $BITCOIN_DIR"
   else
-    echo "Already running bitcoind -testnet from $BITCOIN_DIR"
-  fi  
+    echo "Already running bitcoind testnet from $BITCOIN_DIR"
+  fi
+  echo "bitcoind testnet PID: $TESTNET_PID";
 
-  TESTNET_PID=$(cat $TESTNET_PID_FILE)
-  echo "bitcoind -testnet PID: $TESTNET_PID"
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+    echo "Logging disabled!"
+  else
+    log;
+  fi
 }
 
-stop_both () {
-  stop_bitcoind;
-  stop_bitcoind_testnet;
-}
+# ---- STOP ---- #
 
 stop_bitcoind () {
   if [ -e "$PID_FILE" ]; then
@@ -119,25 +180,34 @@ stop_bitcoind_testnet () {
   fi
 }
 
-start () {
-  if [[ "$NETWORK" == "-both" ]]; then
-      start_both;
-    elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
-      start_bitcoind;
-    else
-      start_bitcoind_testnet;
-  fi
+# ------------- INFO ------------- #
+
+info () {
+  case $NETWORK in
+    both|"") if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
+            echo "bitcoind PID: $PID";
+            echo "bitcoind testnet PID: $TESTNET_PID";
+          else
+            echo "PID files not detected at"$'\n'\
+                 $'\t'"$PID_FILE"$'\n'\
+                 $'\t'"$TESTNET_PID_FILE!"$'\n'\
+                 "Are you sure bitcoind is running on mainnet and/or testnet?"
+          fi;;
+    mainnet) if [[ -e "$PID_FILE" ]]; then
+               echo "bitcoind PID: $PID";
+             else
+               echo "PID file not detected at"$'\n'"$PID_FILE"$'\n'"Are you sure bitcoind is running on mainnet?"
+             fi;;
+    testnet) if [[ -e "$TESTNET_PID_FILE" ]]; then
+               echo "bitcoind testnet PID: $TESTNET_PID";
+             else
+               echo "PID file not detected at"$'\n'"$TESTNET_PID_FILE"$'\n'"Are you sure bitcoind is running on testnet?"
+             fi;;
+    *) echo "Network arg missing or improperly passed!"; exit 1;;
+  esac
 }
 
-stop () {
-  if [[ "$NETWORK" == "-both" ]]; then
-      stop_both;
-    elif [[ -z "$NETWORK" || "$NETWORK" == "-mainnet" ]]; then
-      stop_bitcoind;
-    else
-      stop_bitcoind_testnet;
-  fi
-}
+# ------------- CHECKS / INIT ------------- #
 
 if [[ -z $SUBCOMMAND ]]; then
   echo "No command passed!"
@@ -148,12 +218,13 @@ if [[ $SUBCOMMAND == "-h" || $SUBCOMMAND == "--help" || $SUBCOMMAND == "help" ]]
   print_help;
 fi
 
+# ---- INIT ---- #
+
 if [ -d "$BLOCKCHAIN_DIR" ]; then
-  if [[ $SUBCOMMAND == "start" ]]; then
-    start;
-  elif [[ $SUBCOMMAND == "stop" ]]; then
-    stop;
-  else
-    echo "Unknown command!"
-  fi
+  case $SUBCOMMAND in
+    start|stop) start_stop;;
+    log) log;;
+    info) info;;
+    *) echo "Network arg missing or improperly passed!"; exit 1;;
+  esac
 fi
