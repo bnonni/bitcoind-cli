@@ -11,40 +11,50 @@ I was bored and I like shell scripting.
 - You should then see the following ouput:
 
 ```
-bitcoind-cli installed at /usr/local/bin/
-NAME:
-	Bitcoind CLI: control script for starting bitcoind
+NAME: 
+	Bitcoind CLI: control script for starting bitcoind 
 
-COMMAND:
-	bitcoind-cli: control script for starting bitcoind
+COMMAND: 
+	bitcoind-cli: control script for starting bitcoind 
 
-SUBCOMMANDS:
-	help:    show help
-	start:   start bitcoind
-	stop:    stop bitcoind
-	process: print process ID(s)
+SUBCOMMANDS: 
+	help:    show help 
+	info:    show PIDs 
+	log:     tail bitcoind logs 
+	start:   start bitcoind 
+	stop:    stop bitcoind 
 
+USAGE: 
+	% bitcoind-cli subcommand [-arg | -option arg | --option arg] 
+	% bitcoind-cli help 
+	% bitcoind-cli info 
+	% bitcoind-cli log [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] 
+	% bitcoind-cli start [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log] 
+	% bitcoind-cli stop [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log] 
 
-USAGE:
-	bitcoind-cli [subcommand] [-argument] [-option | --option]
-	bitcoind-cli [help | -help | --help]
-	bitcoind-cli start [-n | --network [-both | -mainnet | -testnet]] | [-both | -mainnet | -testnet] [-l | -log | --log]
-	bitcoind-cli stop  [-n | --network [-both | -mainnet | -testnet]] | [-both | -mainnet | -testnet] [-l | -log | --log]
-  bitcoind-cli log   [-n | --network [-both | -mainnet | -testnet]] | [-both | -mainnet | -testnet] [-l | -log | --log]
-  bitcoind-cli info
+EXAMPLES: 
+	- help: print info about the command, subcommands, usage and examples 
+	% bitcoind-cli help 
 
-EXAMPLES:
-	bitcoind-cli start                                                          -> start bitcoind mainnet, logging off
-	bitcoind-cli start [-both | -testnet | -mainnet]                            -> start bitcoind testnet and mainnet, logging off
-	bitcoind-cli start [-both | -testnet | -mainnet] [-l | -log | --log]        -> start bitcoind testnet and mainnet, logging off
-	bitcoind-cli start [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off
-	bitcoind-cli stop                                                           -> stop bitcoind mainnet, logging off
-	bitcoind-cli stop  [-both | -testnet | -mainnet]                            -> stop bitcoind testnet and mainnet, logging off
-	bitcoind-cli stop  [-both | -testnet | -mainnet] [-l | -log | --log]        -> stop bitcoind testnet and mainnet, logging off
-	bitcoind-cli stop  [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off
-	
+	- info: print the PIDs for the bitcoind processes 
+	% bitcoind-cli info 
+
+	- log: print the debug.log files for bitcoind using tail command 
+	% bitcoind-cli log 
+		[-both | -testnet | -mainnet] 
+		[-n | --network both | mainnet | testnet] 
+
+	- start: start bitcoind, default: mainnet & logging disabled 
+	% bitcoind-cli start 
+		[-both | -testnet | -mainnet] 
+		[-n | --network both | mainnet | testnet] 
+		[-l | -log | --log] 
+
+	- stop: start bitcoind, default: mainnet & logging disabled 
+	% bitcoind-cli stop 
+		[-both | -testnet | -mainnet] 
+		[-n | --network both | mainnet | testnet] 
+
 VERSION:
 	0.0.1
-
-
 ```

@@ -30,28 +30,41 @@ fi
 # ------------- HELP ------------- #
 
 print_help () {
-  echo "NAME:"$'\n'$'\t'\
-"Bitcoind CLI: control script for starting bitcoind"$'\n'$'\n'\
-"COMMAND:"$'\n'$'\t'\
-"bitcoind-cli: control script for starting bitcoind"$'\n'$'\n'\
-"SUBCOMMANDS:"$'\n'$'\t'\
-"help:    show help"$'\n'$'\t'\
-"start:   start bitcoind"$'\n'$'\t'\
-"stop:    stop bitcoind"$'\n'$'\t'\
-"process: print process ID(s)"$'\n'$'\n'$'\n'\
-"USAGE:"$'\n'$'\t'"bitcoind-cli [subcommand] [-argument] [-option | --option]"$'\n'$'\t'\
-"bitcoind-cli [help | -help | --help]"$'\n'$'\t'\
-"bitcoind-cli start [-both | -mainnet | -testnet] [-l | -log | --log]"$'\n'$'\t'\
-"bitcoind-cli stop  [-both | -mainnet | -testnet] [-l | -log | --log]"$'\n'$'\n'\
-"EXAMPLES:"$'\n'$'\t'\
-"bitcoind-cli start                                                          -> start bitcoind mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli start [-both | -testnet | -mainnet]                            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli start [-both | -testnet | -mainnet] [-l | -log | --log]        -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli start [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli stop                                                           -> stop bitcoind mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli stop  [-both | -testnet | -mainnet]                            -> stop bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli stop  [-both | -testnet | -mainnet] [-l | -log | --log]        -> stop bitcoind testnet and mainnet, logging off"$'\n'$'\t'\
-"bitcoind-cli stop  [[-n | --network] [both | mainnet | testnet]]            -> start bitcoind testnet and mainnet, logging off"$'\n'$'\t'$'\n'\
+  echo "NAME:" $'\n'$'\t'\
+"Bitcoind CLI: control script for starting bitcoind" $'\n'$'\n'\
+"COMMAND:" $'\n'$'\t'\
+"bitcoind-cli: control script for starting bitcoind" $'\n'$'\n'\
+"SUBCOMMANDS:" $'\n'$'\t'\
+"help:    show help" $'\n'$'\t'\
+"info:    show PIDs" $'\n'$'\t'\
+"log:     tail bitcoind logs" $'\n'$'\t'\
+"start:   start bitcoind" $'\n'$'\t'\
+"stop:    stop bitcoind" $'\n'$'\n'\
+"USAGE:" $'\n'$'\t'\
+"% bitcoind-cli subcommand [-arg | -option arg | --option arg]" $'\n'$'\t'\
+"% bitcoind-cli help" $'\n'$'\t'\
+"% bitcoind-cli info" $'\n'$'\t'\
+"% bitcoind-cli log [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>]" $'\n'$'\t'\
+"% bitcoind-cli start [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log]" $'\n'$'\t'\
+"% bitcoind-cli stop [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log]" $'\n'$'\n'\
+"EXAMPLES:" $'\n'$'\t'\
+"- help: print info about the command, subcommands, usage and examples" $'\n'$'\t'\
+"% bitcoind-cli help" $'\n'$'\n'$'\t'\
+"- info: print the PIDs for the bitcoind processes" $'\n'$'\t'\
+"% bitcoind-cli info" $'\n'$'\n'$'\t'\
+"- log: print the debug.log files for bitcoind using tail command" $'\n'$'\t'\
+"% bitcoind-cli log" $'\n'$'\t'$'\t'\
+"[-both | -testnet | -mainnet]" $'\n'$'\t'$'\t'\
+"[-n | --network both | mainnet | testnet]" $'\n'$'\n'$'\t'\
+"- start: start bitcoind, default: mainnet & logging disabled" $'\n'$'\t'\
+"% bitcoind-cli start" $'\n'$'\t'$'\t'\
+"[-both | -testnet | -mainnet]" $'\n'$'\t'$'\t'\
+"[-n | --network both | mainnet | testnet]" $'\n'$'\t'$'\t'\
+"[-l | -log | --log]" $'\n'$'\n'$'\t'\
+"- stop: start bitcoind, default: mainnet & logging disabled" $'\n'$'\t'\
+"% bitcoind-cli stop" $'\n'$'\t'$'\t'\
+"[-both | -testnet | -mainnet]" $'\n'$'\t'$'\t'\
+"[-n | --network both | mainnet | testnet]" $'\n'$'\n'\
 "VERSION:"$'\n'$'\t'\
 "0.0.1"$'\n';
   exit 0;
@@ -94,13 +107,13 @@ start_stop () {
   case $SUBCOMMAND in
       start) case $NETWORK in
               both) start_both;;
-              mainnet) start_bitcoind;;
+              mainnet|"") start_bitcoind;;
               testnet) start_bitcoind_testnet;;
               *) echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
       stop) case $NETWORK in
               both) stop_both;;
-              mainnet) stop_bitcoind;;
+              mainnet|"") stop_bitcoind;;
               testnet) stop_bitcoind_testnet;;
               *) echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
@@ -224,7 +237,7 @@ if [[ -z $SUBCOMMAND ]]; then
   exit 1;
 fi
 
-if [[ $SUBCOMMAND == "-h" || $SUBCOMMAND == "--help" || $SUBCOMMAND == "help" ]]; then
+if [[ $SUBCOMMAND == "help" ]]; then
   print_help;
 fi
 
