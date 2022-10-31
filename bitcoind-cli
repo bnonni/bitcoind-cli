@@ -127,9 +127,9 @@ start_both () {
   start_bitcoind;
   start_bitcoind_testnet;
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    echo "Logging disabled!"
-  else
     log;
+  else
+    echo "Logging disabled!"
   fi
 }
 
@@ -143,9 +143,9 @@ start_bitcoind () {
   echo "bitcoind PID: $PID";
   
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    echo "Logging disabled!"
-  else
     log;
+  else
+    echo "Logging disabled!"
   fi
 }
 
@@ -159,9 +159,9 @@ start_bitcoind_testnet () {
   echo "bitcoind testnet PID: $TESTNET_PID";
 
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    echo "Logging disabled!"
-  else
     log;
+  else
+    echo "Logging disabled!"
   fi
 }
 
@@ -171,8 +171,6 @@ stop_both () {
   stop_bitcoind;
   stop_bitcoind_testnet;
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    echo "Logging disabled!"
-  else
     log;
   fi
 }
