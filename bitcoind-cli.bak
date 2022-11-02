@@ -1,45 +1,34 @@
 #!/bin/bash
-# ------------- VARS, ARGS & SETUP ------------- #
-if [[ -e .profile && -z $BLOCKCHAIN_DIR ]]; then
-  source .profile
+# ------------- VARS ------------- #
+BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
+BITCOIN_DIR=$BLOCKCHAIN_DIR/.bitcoin
+TESTNET_DIR=$BITCOIN_DIR/testnet3
+BITCOIN_CONF=$BITCOIN_DIR/bitcoin.conf
+
+PID_FILE=$BITCOIN_DIR/bitcoind.pid
+if [[ -e $PID_FILE ]]; then
+  PID=$(cat $PID_FILE)
 fi
+LOG_FILE=$BITCOIN_DIR/debug.log
+
+TESTNET_PID_FILE=$BITCOIN_DIR/testnet3/bitcoind.pid
+if [[ -e $TESTNET_PID_FILE ]]; then
+  TESTNET_PID=$(cat $TESTNET_PID_FILE)
+fi
+TESTNET_LOG_FILE=$BITCOIN_DIR/testnet3/debug.log
+
+# ------------- ARGS ------------- #
 
 ARGS=($@)
-
 SUBCOMMAND=${ARGS[0]}
-if [[ ${ARGS[1]} == "-n" || ${ARGS[1]} == "--network" ]]; then
-  NETWORK=${ARGS[2]}
-  LOG=${ARGS[3]}
-fi
 NETWORK_ARG=${ARGS[1]}
 NETWORK=$(echo "$NETWORK_ARG" | tr -d -)
 LOG=${ARGS[2]}
 
-if [[ ! -z $NETWORK_ARG && -z $NETWORK ]]; then
-  echo "Error: Network flag -n | --network passed but no network arg detected!"
-fi
-
-BLOCKCHAIN=$BLOCKCHAIN_DIR
-if [[ ! $SUBCOMMAND =~ ^(help|info|setup)$ && ! -d "$BLOCKCHAIN" ]]; then
-  echo "BLOCKCHAIN_DIR=$BLOCKCHAIN not set or improperly set!"
-  echo "Please use 'bitcoind-cli setup /path/to/blockchain/data' to set"
-  exit 1;
-else
-  BITCOIN=$BLOCKCHAIN/.bitcoin
-  CONF=$BITCOIN/bitcoin.conf
-  
-  LOG_FILE=$BITCOIN/debug.log
-  PID_FILE=$BITCOIN/bitcoind.pid
-  if [[ -e $PID_FILE ]]; then
-    PID=$(cat $PID_FILE)
-  fi
-  
-  TESTNET_LOG_FILE=$BITCOIN/testnet3/debug.log
-  TESTNET=$BITCOIN/testnet3
-  TESTNET_PID_FILE=$BITCOIN/testnet3/bitcoind.pid
-  if [[ -e $TESTNET_PID_FILE ]]; then
-    TESTNET_PID=$(cat $TESTNET_PID_FILE)
-  fi
+if [[ $NETWORK_ARG == "-n" || $NETWORK_ARG == "--network" ]]; then
+  NETWORK_FLAG=1
+  NETWORK=${ARGS[2]}
+  LOG=${ARGS[3]}
 fi
 
 # ------------- HELP ------------- #
@@ -52,7 +41,6 @@ print_help () {
 "SUBCOMMANDS:" $'\n'$'\t'\
 "help:    show help" $'\n'$'\t'\
 "info:    show PIDs" $'\n'$'\t'\
-"setup:   setup cli pathing" $'\n'$'\t'\
 "log:     tail bitcoind logs" $'\n'$'\t'\
 "start:   start bitcoind" $'\n'$'\t'\
 "stop:    stop bitcoind" $'\n'$'\n'\
@@ -60,7 +48,6 @@ print_help () {
 "% bitcoind-cli subcommand [-arg | -option arg | --option arg]" $'\n'$'\t'\
 "% bitcoind-cli help" $'\n'$'\t'\
 "% bitcoind-cli info" $'\n'$'\t'\
-"% bitcoind-cli setup /path/to/blockchain/data" $'\n'$'\t'\
 "% bitcoind-cli log [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>]" $'\n'$'\t'\
 "% bitcoind-cli start [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log]" $'\n'$'\t'\
 "% bitcoind-cli stop [-both | -mainnet | -testnet] [-n | --network <both | mainnet | testnet>] [-l | -log | --log]" $'\n'$'\n'\
@@ -69,8 +56,6 @@ print_help () {
 "% bitcoind-cli help" $'\n'$'\n'$'\t'\
 "- info: print the PIDs for the bitcoind processes" $'\n'$'\t'\
 "% bitcoind-cli info" $'\n'$'\n'$'\t'\
-"- setup: set the path to your blockchain data in shell profile" $'\n'$'\t'\
-"% bitcoind-cli setup /Volumes/BLOCKCHAIN" $'\n'$'\n'$'\t'\
 "- log: print the debug.log files for bitcoind using tail command" $'\n'$'\t'\
 "% bitcoind-cli log" $'\n'$'\t'$'\t'\
 "[-both | -testnet | -mainnet]" $'\n'$'\t'$'\t'\
@@ -87,38 +72,6 @@ print_help () {
 "VERSION:"$'\n'$'\t'\
 "0.0.1"$'\n';
   exit 0;
-}
-
-# ------------- SETUP ------------- #
-
-setup () {
-  if [[ -e .profile ]]; then
-    echo "Setup already complete!"
-  else
-    echo $'\n'"export BLOCKCHAIN_DIR=${ARGS[1]}" >> .profile
-    source .profile
-    echo "BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR"
-    echo "bitcoind-cli setup success!"
-  fi
-  exit 0;
-}
-
-# ------------- INFO ------------- #
-
-info () {
-  case $NETWORK in
-    both|"")  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
-                echo "bitcoind PID: $PID";
-                echo "bitcoind testnet PID: $TESTNET_PID";
-              fi;;
-    mainnet)  if [[ -e "$PID_FILE" ]]; then
-                echo "bitcoind PID: $PID";
-              fi;;
-    testnet)  if [[ -e "$TESTNET_PID_FILE" ]]; then
-                echo "bitcoind testnet PID: $TESTNET_PID";
-              fi;;
-    *) echo "PID file not detected. Are you sure bitcoind on $NETWORK?"
-  esac;
 }
 
 # ------------- LOG ------------- #
@@ -154,7 +107,7 @@ log_testnet () {
 
 # ------------- START / STOP ------------- #
 
-start_stop_restart () {
+start_stop () {
   case $SUBCOMMAND in
       start) case $NETWORK in
               both) start_both;;
@@ -168,14 +121,8 @@ start_stop_restart () {
               testnet) stop_bitcoind_testnet;;
               *) echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
-   restart) case $NETWORK in
-              both) restart_both;;
-              mainnet|"") restart_bitcoind;;
-              testnet) restart_bitcoind_testnet;;
-              *) echo "Network arg missing or improperly passed!"; exit 1;;
-            esac;;
       *) echo "Subcommand missing or improperly passed!"; exit 1;;
-    esac;
+    esac
 }
 
 # ---- START ---- #
@@ -185,9 +132,7 @@ start_both () {
   start_bitcoind_testnet;
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
     log;
-  else
-    echo "Logging disabled!"
-  fi;
+  fi
 }
 
 start_bitcoind () {
@@ -201,9 +146,7 @@ start_bitcoind () {
   
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
     log;
-  else
-    echo "Logging disabled!"
-  fi;
+  fi
 }
 
 start_bitcoind_testnet () {
@@ -217,9 +160,7 @@ start_bitcoind_testnet () {
 
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
     log;
-  else
-    echo "Logging disabled!"
-  fi;
+  fi
 }
 
 # ---- STOP ---- #
@@ -229,7 +170,7 @@ stop_both () {
   stop_bitcoind_testnet;
   if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
     log;
-  fi;
+  fi
 }
 
 stop_bitcoind () {
@@ -242,7 +183,7 @@ stop_bitcoind () {
     echo "bitcoind PID $PID stopped!";
   else
     echo "$PID_FILE file not detected! Are you sure bitcoind is running on mainnet?"
-  fi;
+  fi
 }
 
 stop_bitcoind_testnet () {
@@ -255,35 +196,59 @@ stop_bitcoind_testnet () {
     echo "bitcoind PID $TESTNET_PID stopped!";
   else
     echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
-  fi;
+  fi
 }
 
-# ------------- RESTART ---------- #
-restart_both () {
-  stop_both;
-  sleep 30;
-  start_both;
+# ------------- INFO ------------- #
+
+info () {
+  case $NETWORK in
+    both|"")  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
+                echo "bitcoind PID: $PID";
+                echo "bitcoind testnet PID: $TESTNET_PID";
+              else
+                echo "PID files not detected at"$'\n'\
+                $'\t'"$PID_FILE"$'\n'\
+                $'\t'"$TESTNET_PID_FILE!"$'\n'\
+                "Are you sure bitcoind is running on mainnet and/or testnet?"
+              fi;;
+    mainnet)  if [[ -e "$PID_FILE" ]]; then
+                echo "bitcoind PID: $PID";
+              else
+                echo "PID file not detected at"$'\n'"$PID_FILE"$'\n'"Are you sure bitcoind is running on mainnet?"
+              fi;;
+    testnet)  if [[ -e "$TESTNET_PID_FILE" ]]; then
+                echo "bitcoind testnet PID: $TESTNET_PID";
+              else
+                echo "PID file not detected at"$'\n'"$TESTNET_PID_FILE"$'\n'"Are you sure bitcoind is running on testnet?"
+              fi;;
+    *) echo "Network arg missing or improperly passed!"; exit 1;;
+  esac
 }
 
-restart_bitcoind () {
-  stop_bitcoind;
-  sleep 10;
-  start_bitcoind;
-}
+# ------------- INIT ------------- #
+# BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
+# function for initializing the BLOCKCHAIN_DIR
 
-restart_bitcoind_testnet () {
-  stop_bitcoind_testnet;
-  sleep 10;
-  start_bitcoind_testnet;
-}
+# ------------- CHECKS ------------- #
 
-# ------------- SUBCOMMAND CHECK ------------- #
+if [[ -z $SUBCOMMAND ]]; then
+  echo "No command passed!"
+  exit 1;
+fi
 
-case $SUBCOMMAND in
-  help) print_help;;
-  info) info;;
-  setup) setup;;
-  log) log;;
-  start|stop|restart) start_stop_restart;;
-  *) echo "No subcommand passed!"; exit 1;;
-esac
+if [[ $SUBCOMMAND == "help" ]]; then
+  print_help;
+fi
+
+# ---- INIT ---- #
+
+if [ -d "$BLOCKCHAIN_DIR" ]; then
+  case $SUBCOMMAND in
+    init) init;;
+    start|stop) start_stop;;
+    log) log;;
+    info) info;;
+    *) echo "Network arg missing or improperly passed!"; exit 1;;
+  esac
+fi

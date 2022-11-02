@@ -1,15 +1,16 @@
 # bitcoind-cli
-Some very simple and likely unnecessary shell code that allows the user to interact with bitcoind in a simple & specific way.
+Some very simple (and likely unnecessary) shell code that allows the user to interact with bitcoind specific ways.
 
 ## Why?
-I was bored and I like shell scripting.
+I was bored, I like shell scripting and I wanted to write something to talk to bitcoind.
 
 ## How do I use it?
-- Clone this repo
-- Replace the dummy path (`LOCAL_BIN_FOLDER` ) in `install.bitcoind.cli.sh` to a local path
-- Run `sh install.bitcoind.cli.sh`
-- You should then see the following ouput:
-
+0. Clone this repo
+1. Replace the dummy path (`LOCAL_BIN_FOLDER` ) in `install.bitcoind.cli.sh` to a local filepath found in your $PATH var
+2. Replace the `BLOCKCHAIN_DIR` path in `install.bitcoind.cli.sh` w/ the path to your blockchain data & uncomment line 8 (optional)
+3. Instead of step 2, you keep line 8 commented out in `install.bitcoind.cli.sh` and go to step 4
+4. Run `sh install.bitcoind.cli.sh`
+5. You should then see the following ouput:
 ```
 NAME: 
 	Bitcoind CLI: control script for starting bitcoind 
@@ -57,4 +58,8 @@ EXAMPLES:
 
 VERSION:
 	0.0.1
+```
+6. If you skipped step 2, you can now run `6. If you skipped step 2, now run `bitcoind-cli setup /path/to/your/blockchain/data`
+```
+bitcoind-cli setup /path/to/your/blockchain/data
 ```

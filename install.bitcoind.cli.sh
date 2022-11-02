@@ -5,6 +5,8 @@ LOCAL_BIN_FOLDER=/usr/local/bin/
 
 cp $PWD/bitcoind-cli $LOCAL_BIN_FOLDER
 
+# bitcoind-cli setup BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
+
 echo "bitcoind-cli installed at $LOCAL_BIN_FOLDER"
 
 bitcoind-cli help
