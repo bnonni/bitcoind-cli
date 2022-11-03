@@ -200,9 +200,9 @@ start_all () {
   start_bitcoind;
   start_bitcoind_testnet;
   start_bitcoind_signet;
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
+  # if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+  #   log;
+  # fi;
 }
 
 start_bitcoind () {
@@ -211,26 +211,26 @@ start_bitcoind () {
     echo "Running bitcoind from $BITCOIN"
   else
     echo "Already running bitcoin on mainnet from $BITCOIN"
-  fi
-  echo "bitcoind PID: $(cat $PID_FILE)";
-  
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
   fi;
+  
+  echo "bitcoind PID: $(cat $PID_FILE)";
+  # if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+  #   log;
+  # fi;
 }
 
 start_bitcoind_testnet () {
   if [ ! -e "$TESTNET_PID_FILE" ]; then
-    /usr/local/bin/bitcoind -testnet -conf=$CONF
-    echo "Running bitcoind testnet from $BITCOIN"
+    /usr/local/bin/bitcoind -testnet -conf=$CONF;
+    echo "Running bitcoind testnet from $BITCOIN";
   else
-    echo "Already running bitcoind testnet from $BITCOIN"
-  fi
-  echo "bitcoind testnet PID: $(cat $TESTNET_PID)";
-
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
+    echo "Already running bitcoind testnet from $BITCOIN";
   fi;
+
+  echo "bitcoind testnet PID: $(cat $TESTNET_PID)";
+  # if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+  #   log;
+  # fi;
 }
 
 start_bitcoind_signet () {
@@ -239,12 +239,12 @@ start_bitcoind_signet () {
     echo "Running bitcoind signet from $BITCOIN"
   else
     echo "Already running bitcoind signet from $BITCOIN"
-  fi
-  echo "bitcoind signet PID: $(cat $SIGNET_PID)";
-
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
   fi;
+  
+  echo "bitcoind signet PID: $(cat $SIGNET_PID)";
+  # if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+  #   log;
+  # fi;
 }
 
 # ---- STOP ---- #
@@ -252,10 +252,11 @@ start_bitcoind_signet () {
 stop_all () {
   stop_bitcoind;
   stop_bitcoind_testnet;
-  stop_bitcoind_signet
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
+  stop_bitcoind_signet;
+  
+  # if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
+  #   log;
+  # fi;
 }
 
 stop_bitcoind () {
