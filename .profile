@@ -1,1 +1,0 @@
-export BLOCKCHAIN_DIR=/Volumes/BLOCKCHAIN
