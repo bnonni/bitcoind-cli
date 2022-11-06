@@ -20,7 +20,7 @@ echo "NAME:" $'\n'$'\t'\
 "% bitcoind-cli help" $'\n'$'\t'\
 "% bitcoind-cli info" $'\n'$'\t'\
 "% bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]" $'\n'$'\t'\
-"% bitcoind-cli disk [-m | -mount | --mount] [-u | -unmount | --unmount]" $'\n'$'\t'\
+"% bitcoind-cli disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]" $'\n'$'\t'\
 "% bitcoind-cli log [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>]" $'\n'$'\t'\
 "% bitcoind-cli start [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
 "% bitcoind-cli stop [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
