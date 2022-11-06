@@ -19,7 +19,8 @@ echo "NAME:" $'\n'$'\t'\
 "% bitcoind-cli subcommand [-arg | -option arg | --option arg]" $'\n'$'\t'\
 "% bitcoind-cli help" $'\n'$'\t'\
 "% bitcoind-cli info" $'\n'$'\t'\
-"% bitcoind-cli setup /path/to/blockchain/data" $'\n'$'\t'\
+"% bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]" $'\n'$'\t'\
+"% bitcoind-cli disk [-m | -mount | --mount] [-u | -unmount | --unmount]" $'\n'$'\t'\
 "% bitcoind-cli log [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>]" $'\n'$'\t'\
 "% bitcoind-cli start [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
 "% bitcoind-cli stop [-both | -mainnet | -testnet | -signet] [-n | --network <both | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
@@ -59,28 +60,24 @@ setup () {
   DIR=${ARGS[1]}
   INTERACTIVE_SETUP=${ARGS[1]}
 
-  if [[ -z $DIR && -z $INTERACTIVE_SETUP ]]; then
+  set_shell;
+
+  TEST=$(cat $SHELL_PROFILE | grep BLOCKCHAIN_DIR=)
+  if [[ ! -z $TEST ]]; then
+    source $SHELL_PROFILE
+    prompt_setup;
+  elif [[ -z $DIR && -z $INTERACTIVE_SETUP ]]; then
     echo "setup: error: path arg missing. non-interactive setup requires path arg"
     exit 0;
-  fi
-
-  if [[ $INTERACTIVE_SETUP =~ ^(-i|--interactive)$ ]]; then
+  else
     if [[ -z $BLOCKCHAIN  ]]; then
       echo "setup: please enter path to your blockchain data:"
       read BLOCKCHAIN_DIR
-      set_shell_finish_setup;
+      finish_setup;
     else
-      echo "setup: BLOCKCHAIN_DIR set to $BLOCKCHAIN"
-      echo "setup: correct? [y/n]"
-      read ANSWER
-      if [[ ! $ANSWER =~ ^(y|Y)$ ]]; then
-        echo "setup: please enter path to your blockchain data:"
-        read BLOCKCHAIN_DIR
-        set_shell_finish_setup;
-      fi
+      prompt_setup;
     fi
-  else
-    set_shell_finish_setup;
+    finish_setup;
   fi
 
   if [[ -z $BLOCKCHAIN  ]]; then
@@ -111,7 +108,20 @@ setup () {
   exit 0;
 }
 
-set_shell_finish_setup () {
+prompt_setup () {
+  echo "setup: BLOCKCHAIN_DIR set to $BLOCKCHAIN"
+  echo "setup: correct? [y/n]"
+  read ANSWER
+  if [[ $ANSWER =~ ^(y|Y)$ ]]; then
+    echo "setup: please enter path to your blockchain data:"
+    read BLOCKCHAIN_DIR
+    set_shell;
+    finish_setup;
+  fi;
+  exit 0;
+}
+
+set_shell () {
   if [[ $SHELL == "/bin/bash" && -f ~/.bashrc ]]; then
     SHELL_PROFILE=~/.bashrc
   elif [[ $SHELL == "/bin/bash" && -f ~/.bash_profile ]]; then
@@ -121,15 +131,42 @@ set_shell_finish_setup () {
   else
     SHELL_PROFILE=~/.profile
   fi;
+}
+
+finish_setup () {
   echo $'\n'"export BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR" >> $SHELL_PROFILE;
   source $SHELL_PROFILE
   echo "BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR"
 }
 
-teardown () {
-  DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk" )
-  diskutil unmount $DISK
-  echo "$DISK unmounted successfully"
+mount_unmount () {
+  COMMAND=$(echo "${ARGS[1]}" | tr -d -)
+  case $OS in
+    Darwin|Linux) DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk" );;
+               *) echo "setup: unimplemented auto mount for OS: $OS"
+                  echo "setup: please mount disk manually";;
+  esac;
+  if [[ ! -z $BLOCKCHAIN ]]; then
+    echo "$COMMAND: do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
+    read DISK_ANSWER;
+    if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
+        DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk");
+        diskutil $COMMAND $DISK
+        SUCCESS=$(echo $!)
+        case $SUCCESS in
+          0) echo "$COMMAND: $DISK $COMMAND success"
+             exit 0;;
+          1) echo "$COMMAND: $DISK $COMMAND fail"
+             exit 1;;
+        esac
+    else
+      echo "$COMMAND: ok! please $COMMAND disk manually";
+    fi
+  else
+    echo "$COMMAND: disk $COMMAND error: disk not found"
+    echo "$COMMAND: are you sure the disk is mounted?"
+    exit 1;
+  fi;
 }
 
 # ------------- INFO ------------- #
@@ -170,7 +207,7 @@ log () {
     testnet) log_testnet;;
     signet) log_signet;;
     *) echo "Network arg missing or improperly passed!"
-        exit 1;;
+       exit 1;;
   esac;
 }
 
@@ -248,9 +285,6 @@ start_bitcoind () {
     echo "Already running bitcoin on mainnet from $BITCOIN"
   fi;
   echo "bitcoind PID: $(cat $PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
 }
 
 start_bitcoind_testnet () {
@@ -260,11 +294,7 @@ start_bitcoind_testnet () {
   else
     echo "Already running bitcoind testnet from $BITCOIN";
   fi;
-
   echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
 }
 
 start_bitcoind_signet () {
@@ -275,9 +305,6 @@ start_bitcoind_signet () {
     echo "Already running bitcoind signet from $BITCOIN"
   fi;
   echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
 }
 
 # ---- STOP ---- #
@@ -405,8 +432,8 @@ case $SUBCOMMAND in
   help) print_help;;
   info) info;;
   setup) setup;;
-  teardown) teardown;;
   log) log;;
+  disk) mount_unmount;;
   start|stop|restart) start_stop_restart;;
   *) echo "No subcommand passed!"; exit 1;;
 esac
