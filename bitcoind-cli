@@ -162,10 +162,11 @@ mount_unmount () {
                *) echo "setup: unimplemented auto mount for OS: $OS"
                   echo "setup: please mount disk manually";;
   esac;
-  if [[ ! -z $BLOCKCHAIN ]]; then
-    echo "$COMMAND: do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
-    read DISK_ANSWER;
-    if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
+  if [[ ! -z $DISK ]]; then
+    if [[ ! -z $BLOCKCHAIN ]]; then
+      echo "$SUBCOMMAND: do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
+      read DISK_ANSWER;
+      if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
         DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk");
         diskutil $COMMAND $DISK
         SUCCESS=$(echo $!)
@@ -175,12 +176,20 @@ mount_unmount () {
           1) echo "$COMMAND: $DISK $COMMAND fail"
              exit 1;;
         esac
+      else
+        echo "$SUBCOMMAND: ok! please $COMMAND disk manually";
+      fi
     else
-      echo "$COMMAND: ok! please $COMMAND disk manually";
-    fi
+      echo "$SUBCOMMAND error: BLOCKCHAIN=$BLOCKCHAIN: path to external disk missing! Would you like to run setup to set dir?"
+      read SETUP_ANSWER;
+      if [[ $SETUP_ANSWER =~ ^(y|Y)$ ]]; then
+        echo "$SUBCOMMAND: running setup ..."
+        setup;
+      else
+        echo "$SUBCOMMAND: ok! please run bitcoind-cli setup to set BLOCKCHAIN dir. Run bitcoind-cli help for assistance";
   else
-    echo "$COMMAND: disk $COMMAND error: disk not found"
-    echo "$COMMAND: are you sure the disk is mounted?"
+    echo "$SUBCOMMAND: disk $COMMAND error: disk not found"
+    echo "$SUBCOMMAND: are you sure the disk is mounted?"
     exit 1;
   fi;
 }
