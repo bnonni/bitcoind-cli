@@ -187,6 +187,8 @@ mount_unmount () {
         setup;
       else
         echo "$SUBCOMMAND: ok! please run bitcoind-cli setup to set BLOCKCHAIN dir. Run bitcoind-cli help for assistance";
+      fi
+    fi
   else
     echo "$SUBCOMMAND: disk $COMMAND error: disk not found"
     echo "$SUBCOMMAND: are you sure the disk is mounted?"
@@ -203,6 +205,9 @@ info () {
                 echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
                 echo "bitcoind signet PID: $(cat $TESTNET_PID_FILE)";
               else
+                if [[ -z $NETWORK ]]; then
+                  NETWORK="all"
+                fi
                 echo "PID file not detected. Are you sure bitcoind on $NETWORK?"
               fi;;
     mainnet)  if [[ -e "$PID_FILE" ]]; then
