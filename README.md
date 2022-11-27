@@ -59,7 +59,7 @@ EXAMPLES:
 VERSION:
 	0.0.1
 ```
-6. If you skipped step 2, you can now run `6. If you skipped step 2, now run `bitcoind-cli setup /path/to/your/blockchain/data`
+6. If you skipped step 2, you can now run:
 ```
 bitcoind-cli setup /path/to/your/blockchain/data
 ```
