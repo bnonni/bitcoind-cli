@@ -73,6 +73,7 @@ exit 0;
 
 setup () {
   DIR=${ARGS[1]}
+  DISK_NAME=$($BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
   INTERACTIVE_SETUP=${ARGS[1]}
 
   set_shell;
@@ -109,7 +110,8 @@ setup () {
     read DO_MOUNT
     if [[ $DO_MOUNT =~ ^(y|Y)$ ]]; then
       case $OS in
-        Darwin) DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk" )
+        Darwin) test -z $DISK_NAME && echo "Please run setup to set your disk name"
+                DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }')
                 diskutil mount $DISK;;
         *) echo "setup: unimplemented auto mount"
            echo "setup: please mount disk manually";;
@@ -125,9 +127,9 @@ setup () {
 
 prompt_setup () {
   echo "setup: BLOCKCHAIN_DIR set to $BLOCKCHAIN"
-  echo "setup: correct? [y/n]"
+  echo "setup: correct? [y/N]"
   read ANSWER
-  if [[ $ANSWER =~ ^(y|Y)$ ]]; then
+  if [[ $ANSWER =~ ^(n|N)$ ]]; then
     echo "setup: please enter path to your blockchain data:"
     read BLOCKCHAIN_DIR
     set_shell;
@@ -308,12 +310,23 @@ start_all () {
 }
 
 start_bitcoind () {
-  if [ ! -e "$PID_FILE" ]; then
+  if [ -e "$PID_FILE" ]; then
+    echo "Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
+    read START_ANSWER
+    if [[ $START_ANSWER =~ ^(n|N) ]]; then
+      BITCOIND_PROCESS_TEST=$(ps aux | grep -v 'grep' | grep 'bitcoind' | awk '{ print $0 }')
+      if [[ -z $BITCOIND_PROCESS_TEST ]]; then
+        /usr/local/bin/bitcoind -conf=$CONF
+        echo "Running bitcoind from $BITCOIN"
+      else
+        echo "Bitcoind process detected. Please shut use bitcoind-cli restart."
+        exit 0
+      fi
+    fi
+  else
     /usr/local/bin/bitcoind -conf=$CONF
     echo "Running bitcoind from $BITCOIN"
-  else
-    echo "Already running bitcoin on mainnet from $BITCOIN"
-  fi;
+  fi
   echo "bitcoind PID: $(cat $PID_FILE)";
 }
 
