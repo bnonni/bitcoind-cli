@@ -105,3 +105,14 @@ echo "NAME:" $'\n'$'\t'\
 "VERSION:" $'\n'$'\t'\
 "0.0.1" $'\n';
 exit 0;
+
+echo $PWD
+echo $@
+dirname playground.sh
+
+
+
+foo() {
+    echo "Parameter #1 is $1"
+}
+foo input1;

@@ -1,0 +1,68 @@
+.\" Manpage for bitcoind-cli.
+.\" Contact bryan@nonni.io to correct errors or typos.
+.TH man 8 "03 Dec 2022" "1.0" "nuseradd man page"
+.SH NAME
+bitcoind-cli \- All the functionality of bitcoind plus some bonus controls
+.SH SYNOPSIS
+bitcoind-cli version
+bitcoind-cli command [--version|-v] [options] ...
+.SH DESCRIPTION
+bitcoind-cli bridges bitcoind and the local OS to provide users with a more fine-grained control over bitcoind. It offers the ability
+to interact with all three networks at the same time using flags. Basic functionality includes starting and stopping bitcoind on main, test and signet.
+Extended functionality includes easily printing the PIDs of all bitcoind processes, detecting if bitcoind crashed, easily logging output on all networks,
+and mounting / unmounting an external SSD.
+.SH COMMANDS
+help
+        Print info about the cli, commands, usage and examples
+
+setup [--interactive] '\033[4mpath\033[0m'
+        Set the path to your blockchain data in shell profile
+
+        -i, --interactive
+                Walks the user through an interactive setup via challenge / response
+
+
+info '\033[4mpath\033[0m'
+        Print the PIDs for the bitcoind processes on each network
+
+cleanup [options] [formula|cask ...]
+       Remove stale lock files and outdated downloads for all formulae and casks, and remove old versions of installed formulae. If arguments are specified, only do
+       this for the given formulae and casks. Removes all downloads more than 120 days old. This can be adjusted with HOMEBREW_CLEANUP_MAX_AGE_DAYS.
+
+       --prune
+              Remove all cache files older than specified days. If you want to remove everything, use --prune=all.
+
+log '\033[4mpath\033[0m'
+        Set the path to your blockchain data in shell profile        
+
+disk '\033[4mpath\033[0m'
+        Set the path to your blockchain data in shell profile
+
+
+
+info: print the PIDs for the bitcoind processes
+disk: interact with an external disk housing blockchain data
+crash: used for detecting an improper shutdown of bitcoind leaving behind a .pid file
+log: print the debug.log files for bitcoind using tail command
+start: start bitcoind, default: all & logging disabled
+stop: stop bitcoind, default: all & logging disabled
+restart: restart bitcoind, default: all & logging disabled
+
+info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
+disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]
+log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
+disk [mount | unmount]
+crash
+start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+.SH COMMANDS
+
+.SH OPTIONS
+The nuseradd does not take any options. However, you can supply username.
+.SH SEE ALSO
+useradd(8), passwd(5), nuseradd.debian(8)
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Vivek Gite (vivek@nixcraft.net.in)

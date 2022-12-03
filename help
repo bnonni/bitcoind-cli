@@ -1,8 +1,9 @@
+
 NAME:
-     Bitcoind CLI: control script for starting bitcoind
+     bitcoind-cli \- All the functionality of bitcoind plus some bonus controls
 
 COMMAND:
-        bitcoind-cli: control script for starting bitcoind
+        bitcoind-cli: scripts for fine-grained control over bitcoind
 
 SUBCOMMANDS:
             help:    show help
@@ -68,5 +69,8 @@ EXAMPLES:
                  [-n | --network all | mainnet | testnet | signet]
 
 VERSION:
-        0.0.1
+        Homebrew 3.6.9
+        Homebrew/homebrew-core (git revision 9b415ba0fc6; last commit 2022-11-08)
+        Homebrew/homebrew-cask (git revision 11282d8a5e; last commit 2022-11-08)
+        bitcoind-cli 0.0.1
 

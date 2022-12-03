@@ -1,9 +1,13 @@
 #!/bin/bash
-# ------------- HELP ------------- #
 OS=$(uname)
+# ------------- VERSION ------------- #
+version () {
+  pretty_echo ""
+}
+# ------------- HELP ------------- #
 
 print_help () {
-  cat ./help.conf
+  pretty_echo $(cat $BITCOIND_CLI_MAN)
 }
 
 # ------------- SETUP ------------- #
@@ -102,7 +106,7 @@ mount_unmount () {
   esac;
   if [[ ! -z $DISK ]]; then
     if [[ ! -z $BLOCKCHAIN ]]; then
-      echo "$SUBCOMMAND: do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
+      pretty_echo "do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
       read DISK_ANSWER;
       if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
         diskutil $COMMAND $DISK
@@ -114,21 +118,21 @@ mount_unmount () {
              exit 1;;
         esac
       else
-        echo "$SUBCOMMAND: ok! please $COMMAND disk manually";
+        pretty_echo "ok! please $COMMAND disk manually";
       fi
     else
       echo "$SUBCOMMAND error: BLOCKCHAIN=$BLOCKCHAIN: path to external disk missing! Would you like to run setup to set dir?"
       read SETUP_ANSWER;
       if [[ $SETUP_ANSWER =~ ^(y|Y)$ ]]; then
-        echo "$SUBCOMMAND: running setup ..."
+        pretty_echo "running setup ..."
         setup;
       else
-        echo "$SUBCOMMAND: ok! please run bitcoind-cli setup to set BLOCKCHAIN dir. Run bitcoind-cli help for assistance";
+        pretty_echo "ok! please run bitcoind-cli setup to set BLOCKCHAIN dir. Run bitcoind-cli help for assistance";
       fi
     fi
   else
-    echo "$SUBCOMMAND: disk $COMMAND error: disk not found"
-    echo "$SUBCOMMAND: are you sure the disk is mounted?"
+    pretty_echo "disk $COMMAND error: disk not found"
+    pretty_echo "are you sure the disk is mounted?"
     exit 1;
   fi;
 }
@@ -137,7 +141,7 @@ mount_unmount () {
 
 info () {
   if [[ ! -e "$PID_FILE" || ! -e "$TESTNET_PID_FILE" || ! -e "$SIGNET_PID_FILE" ]]; then
-    echo "$SUBCOMMAND: No PID files detected"
+    pretty_echo "No PID files detected"
     if [[ $NETWORK =~ ^(all)$ ]]; then
       NETWORK="mainnet, testnet and/or signet"
     fi
@@ -146,24 +150,24 @@ info () {
   fi
   case $NETWORK in
     all)  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" && -e "$SIGNET_PID_FILE" ]]; then
-                echo "$SUBCOMMAND: bitcoind PID: $(cat $PID_FILE)";
-                echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
-                echo "$SUBCOMMAND: bitcoind signet PID: $(cat $TESTNET_PID_FILE)";
+                pretty_echo "bitcoind PID: $(cat $PID_FILE)";
+                pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+                pretty_echo "bitcoind signet PID: $(cat $TESTNET_PID_FILE)";
               else
                 if [[ -z $NETWORK ]]; then
                   NETWORK="all"
                 fi
               fi;;
     mainnet|"")  if [[ -e "$PID_FILE" ]]; then
-                echo "$SUBCOMMAND: bitcoind mainnet PID: $(cat $PID_FILE)";
+                pretty_echo "bitcoind mainnet PID: $(cat $PID_FILE)";
               fi;;
     testnet)  if [[ -e "$TESTNET_PID_FILE" ]]; then
-                echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+                pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
               fi;;
     signet)  if [[ -e "$SIGNET_PID_FILE" ]]; then
-                echo "$SUBCOMMAND: bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
+                pretty_echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
               fi;;
-    *) echo "$SUBCOMMAND: ERROR: Network arg not set!";;
+    *) pretty_echo "ERROR: Network arg not set!";;
   esac;
 }
 
@@ -171,63 +175,67 @@ info () {
 
 crash () {
   if [[ -e "$PID_FILE" ]]; then
-    echo "$SUBCOMMAND: Are you sure you want to delete pid file at $PID_FILE? [y/N]"
+    pretty_echo "Are you sure you want to delete pid file at $PID_FILE? [y/N]"
     read DELETE_ANSWER
     if [[ $DELETE_ANSWER =~ ^(y|Y)$ ]]; then
-      echo "$SUBCOMMAND: Deleting!"
+      pretty_echo "Deleting!"
       rm -rf $BITCOIN/bitcoind.pid
-      echo "$SUBCOMMAND: Restart bitcoind? [y/N]"
+      pretty_echo "Restart bitcoind? [y/N]"
       read RESTART_ANSWER
       if [[ $RESTART_ANSWER =~ ^(y|Y)$ ]]; then
         start_bitcoind;
       fi
     else
-      echo "$SUBCOMMAND: Aborting!"
+      pretty_echo "Aborting!"
       exit 0;
     fi
   else
-    echo "$SUBCOMMAND: No pid file detected at $PID_FILE"
+    pretty_echo "No pid file detected at $PID_FILE"
     interactive_start;
   fi
 }
 
 # ------------- LOG ------------- #
 
+pretty_echo () {
+  pretty_echo "$1"
+}
+
 log () {
-  echo "$SUBCOMMAND: Logging enabled!"
+  pretty_echo "Logging enabled!"
   case $NETWORK in
     all|"") log_all;;
     mainnet|"") log_mainnet;;
     testnet) log_testnet;;
     signet) log_signet;;
-    *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"
+    *) pretty_echo "Network arg missing or improperly passed!"
        exit 1;;
   esac;
 }
 
 log_all () {
-  echo "$SUBCOMMAND: Logging mainnet $LOG_FILE"
+  pretty_echo "Logging mainnet $LOG_FILE"
   tail -f $LOG_FILE
-  echo "$SUBCOMMAND: Logging testnet $TESTNET_LOG_FILE"
+  pretty_echo "Logging testnet $TESTNET_LOG_FILE"
   tmux new-session -d -s testnet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"
   tmux attach;
-  echo "$SUBCOMMAND: Logging signet $SIGNET_LOG_FILE"
+  pretty_echo "Logging signet $SIGNET_LOG_FILE"
   tmux new-session -d -s signet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/signet/debug.log"
   tmux attach;
 }
 
 log_mainnet () {
-  echo "$SUBCOMMAND: Logging mainnet $LOG_FILE"
+  pretty_echo "Logging mainnet $LOG_FILE"
   tail -f $LOG_FILE;
 }
 
 log_testnet () {
-  echo "$SUBCOMMAND: Logging testnet $TESTNET_LOG_FILE"
+  pretty_echo "Logging testnet $TESTNET_LOG_FILE"
   tail -f $TESTNET_LOG_FILE;
 }
 
 log_signet () {
-  echo "$SUBCOMMAND: Logging signet $SIGNET_LOG_FILE"
+  pretty_echo "Logging signet $SIGNET_LOG_FILE"
   tail -f $SIGNET_LOG_FILE;
 }
 
@@ -240,36 +248,36 @@ start_stop_restart () {
               mainnet|"") start_bitcoind;;
               testnet) start_bitcoind_testnet;;
               signet) start_bitcoind_signet;;
-              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
+              *) pretty_echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
       stop) case $NETWORK in
               all|"") stop_all;;
               mainnet|"") stop_bitcoind;;
               testnet) stop_bitcoind_testnet;;
               signet) stop_bitcoind_signet;;
-              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
+              *) pretty_echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
    restart) case $NETWORK in
               all) restart_all;;
               mainnet|"") restart_bitcoind;;
               testnet) restart_bitcoind_testnet;;
               signet) restart_bitcoind_signet;;
-              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
+              *) pretty_echo "Network arg missing or improperly passed!"; exit 1;;
             esac;;
       *) echo "err: Subcommand missing or improperly passed!"; exit 1;;
     esac;
 }
 
 interactive_start () {
-  echo "$SUBCOMMAND: Start bitcoind? [y/N]"
+  pretty_echo "Start bitcoind? [y/N]"
   read START_ANSWER
   if [[ $START_ANSWER =~ ^(y|Y)$ ]]; then
-    echo "$SUBCOMMAND: Which network? [mainnet/testnet/signet]"
+    pretty_echo "Which network? [mainnet/testnet/signet]"
     # add check for misspellings
     read NETWORK
     start_bitcoind;
   else
-    echo "$SUBCOMMAND: Ok!"
+    pretty_echo "Ok!"
   fi
 }
 
@@ -286,43 +294,43 @@ start_all () {
 
 start_bitcoind () {
   if [ -e "$PID_FILE" ]; then
-    echo "$SUBCOMMAND: Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
+    pretty_echo "Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
     read START_ANSWER
     if [[ $START_ANSWER =~ ^(n|N) ]]; then
       BITCOIND_PROCESS_TEST=$(ps aux | grep -v 'grep' | grep 'bitcoind' | awk '{ print $0 }')
       if [[ -z $BITCOIND_PROCESS_TEST ]]; then
         /usr/local/bin/bitcoind -conf=$CONF
-        echo "$SUBCOMMAND: Running bitcoind from $BITCOIN"
+        pretty_echo "Running bitcoind from $BITCOIN"
       else
-        echo "$SUBCOMMAND: Bitcoind process detected. Please shut use bitcoind-cli restart."
+        pretty_echo "Bitcoind process detected. Please shut use bitcoind-cli restart."
         exit 0
       fi
     fi
   else
     /usr/local/bin/bitcoind -conf=$CONF
-    echo "$SUBCOMMAND: Running bitcoind from $BITCOIN"
+    pretty_echo "Running bitcoind from $BITCOIN"
   fi
-  echo "$SUBCOMMAND: bitcoind PID: $(cat $PID_FILE)";
+  pretty_echo "bitcoind PID: $(cat $PID_FILE)";
 }
 
 start_bitcoind_testnet () {
   if [ ! -e "$TESTNET_PID_FILE" ]; then
     /usr/local/bin/bitcoind -testnet -conf=$CONF;
-    echo "$SUBCOMMAND: Running bitcoind testnet from $BITCOIN";
+    pretty_echo "Running bitcoind testnet from $BITCOIN";
   else
-    echo "$SUBCOMMAND: Already running bitcoind testnet from $BITCOIN";
+    pretty_echo "Already running bitcoind testnet from $BITCOIN";
   fi;
-  echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+  pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
 }
 
 start_bitcoind_signet () {
   if [ ! -e "$SIGNET_PID_FILE" ]; then
     /usr/local/bin/bitcoind -signet -conf=$CONF
-    echo "$SUBCOMMAND: Running bitcoind signet from $BITCOIN"
+    pretty_echo "Running bitcoind signet from $BITCOIN"
   else
-    echo "$SUBCOMMAND: Already running bitcoind signet from $BITCOIN"
+    pretty_echo "Already running bitcoind signet from $BITCOIN"
   fi;
-  echo "$SUBCOMMAND: bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
+  pretty_echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
 }
 
 # ---- STOP ---- #
@@ -354,10 +362,10 @@ stop_bitcoind_testnet () {
     /usr/local/bin/bitcoin-cli -testnet -conf=$CONF stop
     # do check for bitcoind still starting
     # if kill -9, must remove .pid files
-    echo "$SUBCOMMAND: Stopping bitcoind testnet from $BITCOIN"
-    echo "$SUBCOMMAND: bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!";
+    pretty_echo "Stopping bitcoind testnet from $BITCOIN"
+    pretty_echo "bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!";
   else
-    echo "$SUBCOMMAND: $TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
+    pretty_echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
   fi;
 }
 
@@ -366,10 +374,10 @@ stop_bitcoind_signet () {
     /usr/local/bin/bitcoin-cli -signet -conf=$CONF stop
     # do check for bitcoind still starting
     # if kill -9, must remove .pid files
-    echo "$SUBCOMMAND: Stopping bitcoind signet from $BITCOIN"
-    echo "$SUBCOMMAND: bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
+    pretty_echo "Stopping bitcoind signet from $BITCOIN"
+    pretty_echo "bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
   else
-    echo "$SUBCOMMAND: $SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
+    pretty_echo "$SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
   fi;
 }
 
@@ -423,6 +431,24 @@ CONF=$BITCOIN/bitcoin.conf
 
 DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
 
+BITCOIND_CLI_MAN=/usr/local/man/man-$USER/bitcoind-cli.man
+if [[ -z $BITCOIND_CLI_MAN ]]; then
+  pretty_echo "err: bitcoind-cli manual missing"
+  pretty_echo "Did you run install.bitcoind.cli.sh? [y/N]"
+  read MAN_INSTALL_ANSWER
+  if [[ $MAN_INSTALL_ANSWER =~ ^(n|N)$ ]]; then
+    pretty_echo "Would you like to install bitcoind-cli? [y/N]"
+    read CLI_INSTALL_ANSWER
+    if [[ $CLI_INSTALL_ANSWER =~ ^(y|Y)$ ]]; then
+      sh "$BITCOIND_CLI_REPO/install.bitcoind.cli.sh"
+    else
+      echo "ok! please install bitcoind-cli manually to continue"
+    fi
+  fi
+fi
+
+    
+
 LOG_FILE=$BITCOIN/debug.log
 PID_FILE=$BITCOIN/bitcoind.pid
 if [[ -e $PID_FILE ]]; then
@@ -449,6 +475,7 @@ if [[ ! -z $SHELL_PROFILE ]]; then
 fi
 
 case $SUBCOMMAND in
+  version) version;;
   help) print_help;;
   info) info;;
   crash) crash;;
