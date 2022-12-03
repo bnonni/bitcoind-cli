@@ -23,6 +23,11 @@ if [[ $SHOW_HELP =~ ^(h|H|help)$ ]]; then
 elif [[ -z $SHOW_HELP ]]; then
   echo "Would you like to see the bitcoind-cli usage guide? [y|N]"
   read SHOW_HELP
+  if [[ $SHOW_HELP =~ ^(y|Y) ]]; then
+    bitcoind-cli help
+  fi
+  exit 0
 else
   echo "For help with using the cli, run bitcoind-cli help"
+  exit 0
 fi

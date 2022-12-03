@@ -3,77 +3,13 @@
 OS=$(uname)
 
 print_help () {
-echo "NAME:" $'\n'$'\t'\
-"Bitcoind CLI: control script for starting bitcoind" $'\n'$'\n'\
-"COMMAND:" $'\n'$'\t'\
-"bitcoind-cli: control script for starting bitcoind" $'\n'$'\n'\
-"SUBCOMMANDS:" $'\n'$'\t'\
-"help:    show help" $'\n'$'\t'\
-"setup:   setup cli pathing" $'\n'$'\t'\
-"info:    show PIDs" $'\n'$'\t'\
-"disk:    interact with ext disk" $'\n'$'\t'\
-"log:     tail bitcoind logs" $'\n'$'\t'\
-"start:   start bitcoind" $'\n'$'\t'\
-"stop:    stop bitcoind" $'\n'$'\t'\
-"restart: restart bitcoind (stop + start)"$'\n'$'\n'\
-"USAGE:" $'\n'$'\t'\
-"% bitcoind-cli subcommand [-arg | -option arg | --option arg]" $'\n'$'\t'\
-"% bitcoind-cli help" $'\n'$'\t'\
-"% bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]" $'\n'$'\t'\
-"% bitcoind-cli info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]" $'\n'$'\t'\
-"% bitcoind-cli disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]" $'\n'$'\t'\
-"% bitcoind-cli log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]" $'\n'$'\t'\
-"% bitcoind-cli disk [mount | unmount]" $'\n'$'\t'\
-"% bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
-"% bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\t'\
-"% bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]" $'\n'$'\n'\
-"EXAMPLES:" $'\n'$'\t'\
-\
-"- help: print info about the command, subcommands, usage and examples" $'\n'$'\t'\
-"% bitcoind-cli help" $'\n'$'\n'$'\t'\
-\
-"- setup: set the path to your blockchain data in shell profile" $'\n'$'\t'\
-"% bitcoind-cli setup /Volumes/BLOCKCHAIN" $'\n'$'\n'$'\t'\
-\
-"- info: print the PIDs for the bitcoind processes" $'\n'$'\t'\
-"% bitcoind-cli info -all" $'\n'$'\t'$'\t'\
-"[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
-"[-n | --network all | mainnet | testnet | signet]"$'\n'$'\n'$'\t'\
-\
-"- disk: interact with an external disk housing blockchain data" $'\n'$'\t'\
-"% bitcoind-cli disk mount" $'\n'$'\t'$'\t'\
-"[mount | unmount]"$'\n'$'\n'$'\t'\
-\
-"- log: print the debug.log files for bitcoind using tail command" $'\n'$'\t'\
-"% bitcoind-cli log -all" $'\n'$'\t'$'\t'\
-"[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
-"[-n | --network all | mainnet | testnet | signet]"$'\n'$'\n'$'\t'\
-\
-"- start: start bitcoind, default: all & logging disabled" $'\n'$'\t'\
-"% bitcoind-cli start -all" $'\n'$'\t'$'\t'\
-"[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
-"[-n | --network all | mainnet | testnet | signet]" $'\n'$'\t'$'\t'\
-"[-l | -log | --log]" $'\n'$'\n'$'\t'\
-\
-"- stop: stop bitcoind, default: all & logging disabled" $'\n'$'\t'\
-"% bitcoind-cli stop -all" $'\n'$'\t'$'\t'\
-"[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
-"[-n | --network all | mainnet | testnet | signet] "$'\n'$'\n'$'\t'\
-\
-"- restart: restart bitcoind, default: all & logging disabled" $'\n'$'\t'\
-"% bitcoind-cli restart -all" $'\n'$'\t'$'\t'\
-"[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
-"[-n | --network all | mainnet | testnet | signet] "$'\n'$'\n'\
-"VERSION:" $'\n'$'\t'\
-"0.0.1" $'\n';
-exit 0;
+  cat ./help.conf
 }
 
 # ------------- SETUP ------------- #
 
 setup () {
   DIR=${ARGS[1]}
-  DISK_NAME=$($BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
   INTERACTIVE_SETUP=${ARGS[1]}
 
   set_shell;
@@ -160,7 +96,7 @@ mount_unmount () {
   # TODO: finish additional flags -m, -u, -mount, -unmount, --mount, --unmount 
   COMMAND=$(echo "${ARGS[1]}" | tr -d -)
   case $OS in
-    Darwin|Linux) DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk" );;
+    Darwin|Linux) DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }');;
                *) echo "setup: unimplemented auto mount for OS: $OS"
                   echo "setup: please mount disk manually";;
   esac;
@@ -169,7 +105,6 @@ mount_unmount () {
       echo "$SUBCOMMAND: do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
       read DISK_ANSWER;
       if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
-        DISK=$(diskutil list | sed -n '/external/,$p' | grep -v 'external' | grep -v "IDENTIFIER" | grep "disk\ds\d" | awk '{print  $8 }' | grep "disk");
         diskutil $COMMAND $DISK
         SUCCESS=$(echo $!)
         case $SUCCESS in
@@ -201,71 +136,98 @@ mount_unmount () {
 # ------------- INFO ------------- #
 
 info () {
+  if [[ ! -e "$PID_FILE" || ! -e "$TESTNET_PID_FILE" || ! -e "$SIGNET_PID_FILE" ]]; then
+    echo "$SUBCOMMAND: No PID files detected"
+    if [[ $NETWORK =~ ^(all)$ ]]; then
+      NETWORK="mainnet, testnet and/or signet"
+    fi
+    echo "Are you sure bitcoind is running on $NETWORK?"
+    exit 0
+  fi
   case $NETWORK in
-    all|"")  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" && -e "$TESTNET_PID_FILE" ]]; then
-                echo "bitcoind PID: $(cat $PID_FILE)";
-                echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
-                echo "bitcoind signet PID: $(cat $TESTNET_PID_FILE)";
+    all)  if [[ -e "$PID_FILE" && -e "$TESTNET_PID_FILE" && -e "$SIGNET_PID_FILE" ]]; then
+                echo "$SUBCOMMAND: bitcoind PID: $(cat $PID_FILE)";
+                echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+                echo "$SUBCOMMAND: bitcoind signet PID: $(cat $TESTNET_PID_FILE)";
               else
                 if [[ -z $NETWORK ]]; then
                   NETWORK="all"
                 fi
-                echo "PID file not detected. Are you sure bitcoind on $NETWORK?"
               fi;;
-    mainnet)  if [[ -e "$PID_FILE" ]]; then
-                echo "bitcoind mainnet PID: $(cat $PID_FILE)";
-              else
-                echo "PID file not detected. Are you sure bitcoind on $NETWORK?"
+    mainnet|"")  if [[ -e "$PID_FILE" ]]; then
+                echo "$SUBCOMMAND: bitcoind mainnet PID: $(cat $PID_FILE)";
               fi;;
     testnet)  if [[ -e "$TESTNET_PID_FILE" ]]; then
-                echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+                echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
               fi;;
     signet)  if [[ -e "$SIGNET_PID_FILE" ]]; then
-                echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
-              else
-                echo "PID file not detected. Are you sure bitcoind on $NETWORK?"
+                echo "$SUBCOMMAND: bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
               fi;;
-    *) echo "ERROR: Network arg not set!";;
+    *) echo "$SUBCOMMAND: ERROR: Network arg not set!";;
   esac;
+}
+
+# ------------- CRASH ------------- #
+
+crash () {
+  if [[ -e "$PID_FILE" ]]; then
+    echo "$SUBCOMMAND: Are you sure you want to delete pid file at $PID_FILE? [y/N]"
+    read DELETE_ANSWER
+    if [[ $DELETE_ANSWER =~ ^(y|Y)$ ]]; then
+      echo "$SUBCOMMAND: Deleting!"
+      rm -rf $BITCOIN/bitcoind.pid
+      echo "$SUBCOMMAND: Restart bitcoind? [y/N]"
+      read RESTART_ANSWER
+      if [[ $RESTART_ANSWER =~ ^(y|Y)$ ]]; then
+        start_bitcoind;
+      fi
+    else
+      echo "$SUBCOMMAND: Aborting!"
+      exit 0;
+    fi
+  else
+    echo "$SUBCOMMAND: No pid file detected at $PID_FILE"
+    interactive_start;
+  fi
 }
 
 # ------------- LOG ------------- #
 
 log () {
-  echo "Logging enabled!"
+  echo "$SUBCOMMAND: Logging enabled!"
   case $NETWORK in
     all|"") log_all;;
-    mainnet) log_mainnet;;
+    mainnet|"") log_mainnet;;
     testnet) log_testnet;;
     signet) log_signet;;
-    *) echo "Network arg missing or improperly passed!"
+    *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"
        exit 1;;
   esac;
 }
 
 log_all () {
-  echo "Logging mainnet $LOG_FILE"
+  echo "$SUBCOMMAND: Logging mainnet $LOG_FILE"
   tail -f $LOG_FILE
-  echo "Logging testnet $TESTNET_LOG_FILE"
+  echo "$SUBCOMMAND: Logging testnet $TESTNET_LOG_FILE"
   tmux new-session -d -s testnet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"
   tmux attach;
-  echo "Logging signet $SIGNET_LOG_FILE"
+  echo "$SUBCOMMAND: Logging signet $SIGNET_LOG_FILE"
   tmux new-session -d -s signet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/signet/debug.log"
   tmux attach;
 }
 
 log_mainnet () {
-  echo "Logging mainnet $LOG_FILE"
+  echo "$SUBCOMMAND: Logging mainnet $LOG_FILE"
   tail -f $LOG_FILE;
 }
 
 log_testnet () {
-  echo "Logging testnet $TESTNET_LOG_FILE"
+  echo "$SUBCOMMAND: Logging testnet $TESTNET_LOG_FILE"
   tail -f $TESTNET_LOG_FILE;
 }
 
 log_signet () {
-  echo "Logging signet $SIGNET_LOG_FILE"
+  echo "$SUBCOMMAND: Logging signet $SIGNET_LOG_FILE"
   tail -f $SIGNET_LOG_FILE;
 }
 
@@ -275,27 +237,40 @@ start_stop_restart () {
   case $SUBCOMMAND in
       start) case $NETWORK in
               all|"") start_all;;
-              mainnet) start_bitcoind;;
+              mainnet|"") start_bitcoind;;
               testnet) start_bitcoind_testnet;;
               signet) start_bitcoind_signet;;
-              *) echo "Network arg missing or improperly passed!"; exit 1;;
+              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
             esac;;
       stop) case $NETWORK in
               all|"") stop_all;;
-              mainnet) stop_bitcoind;;
+              mainnet|"") stop_bitcoind;;
               testnet) stop_bitcoind_testnet;;
               signet) stop_bitcoind_signet;;
-              *) echo "Network arg missing or improperly passed!"; exit 1;;
+              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
             esac;;
    restart) case $NETWORK in
               all) restart_all;;
               mainnet|"") restart_bitcoind;;
               testnet) restart_bitcoind_testnet;;
               signet) restart_bitcoind_signet;;
-              *) echo "Network arg missing or improperly passed!"; exit 1;;
+              *) echo "$SUBCOMMAND: Network arg missing or improperly passed!"; exit 1;;
             esac;;
-      *) echo "Subcommand missing or improperly passed!"; exit 1;;
+      *) echo "err: Subcommand missing or improperly passed!"; exit 1;;
     esac;
+}
+
+interactive_start () {
+  echo "$SUBCOMMAND: Start bitcoind? [y/N]"
+  read START_ANSWER
+  if [[ $START_ANSWER =~ ^(y|Y)$ ]]; then
+    echo "$SUBCOMMAND: Which network? [mainnet/testnet/signet]"
+    # add check for misspellings
+    read NETWORK
+    start_bitcoind;
+  else
+    echo "$SUBCOMMAND: Ok!"
+  fi
 }
 
 # ---- START ---- #
@@ -311,43 +286,43 @@ start_all () {
 
 start_bitcoind () {
   if [ -e "$PID_FILE" ]; then
-    echo "Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
+    echo "$SUBCOMMAND: Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
     read START_ANSWER
     if [[ $START_ANSWER =~ ^(n|N) ]]; then
       BITCOIND_PROCESS_TEST=$(ps aux | grep -v 'grep' | grep 'bitcoind' | awk '{ print $0 }')
       if [[ -z $BITCOIND_PROCESS_TEST ]]; then
         /usr/local/bin/bitcoind -conf=$CONF
-        echo "Running bitcoind from $BITCOIN"
+        echo "$SUBCOMMAND: Running bitcoind from $BITCOIN"
       else
-        echo "Bitcoind process detected. Please shut use bitcoind-cli restart."
+        echo "$SUBCOMMAND: Bitcoind process detected. Please shut use bitcoind-cli restart."
         exit 0
       fi
     fi
   else
     /usr/local/bin/bitcoind -conf=$CONF
-    echo "Running bitcoind from $BITCOIN"
+    echo "$SUBCOMMAND: Running bitcoind from $BITCOIN"
   fi
-  echo "bitcoind PID: $(cat $PID_FILE)";
+  echo "$SUBCOMMAND: bitcoind PID: $(cat $PID_FILE)";
 }
 
 start_bitcoind_testnet () {
   if [ ! -e "$TESTNET_PID_FILE" ]; then
     /usr/local/bin/bitcoind -testnet -conf=$CONF;
-    echo "Running bitcoind testnet from $BITCOIN";
+    echo "$SUBCOMMAND: Running bitcoind testnet from $BITCOIN";
   else
-    echo "Already running bitcoind testnet from $BITCOIN";
+    echo "$SUBCOMMAND: Already running bitcoind testnet from $BITCOIN";
   fi;
-  echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+  echo "$SUBCOMMAND: bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
 }
 
 start_bitcoind_signet () {
   if [ ! -e "$SIGNET_PID_FILE" ]; then
     /usr/local/bin/bitcoind -signet -conf=$CONF
-    echo "Running bitcoind signet from $BITCOIN"
+    echo "$SUBCOMMAND: Running bitcoind signet from $BITCOIN"
   else
-    echo "Already running bitcoind signet from $BITCOIN"
+    echo "$SUBCOMMAND: Already running bitcoind signet from $BITCOIN"
   fi;
-  echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
+  echo "$SUBCOMMAND: bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
 }
 
 # ---- STOP ---- #
@@ -379,10 +354,10 @@ stop_bitcoind_testnet () {
     /usr/local/bin/bitcoin-cli -testnet -conf=$CONF stop
     # do check for bitcoind still starting
     # if kill -9, must remove .pid files
-    echo "Stopping bitcoind testnet from $BITCOIN"
-    echo "bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!";
+    echo "$SUBCOMMAND: Stopping bitcoind testnet from $BITCOIN"
+    echo "$SUBCOMMAND: bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!";
   else
-    echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
+    echo "$SUBCOMMAND: $TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
   fi;
 }
 
@@ -391,10 +366,10 @@ stop_bitcoind_signet () {
     /usr/local/bin/bitcoin-cli -signet -conf=$CONF stop
     # do check for bitcoind still starting
     # if kill -9, must remove .pid files
-    echo "Stopping bitcoind signet from $BITCOIN"
-    echo "bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
+    echo "$SUBCOMMAND: Stopping bitcoind signet from $BITCOIN"
+    echo "$SUBCOMMAND: bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
   else
-    echo "$SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
+    echo "$SUBCOMMAND: $SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
   fi;
 }
 
@@ -433,7 +408,7 @@ if [[ ${ARGS[1]} == "-n" || ${ARGS[1]} == "--network" ]]; then
   NETWORK=${ARGS[2]}
   LOG=${ARGS[3]}
   if [[ ! -z $NETWORK_ARG && -z $NETWORK ]]; then
-    echo "Error: Network flag -n | --network passed but no network arg detected!"
+    echo "$SUBCOMMAND err: Network flag -n | --network passed but no network arg detected!"
   fi
 fi
 
@@ -445,6 +420,8 @@ BLOCKCHAIN=$BLOCKCHAIN_DIR
 
 BITCOIN=$BLOCKCHAIN/.bitcoin
 CONF=$BITCOIN/bitcoin.conf
+
+DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
 
 LOG_FILE=$BITCOIN/debug.log
 PID_FILE=$BITCOIN/bitcoind.pid
@@ -474,9 +451,10 @@ fi
 case $SUBCOMMAND in
   help) print_help;;
   info) info;;
+  crash) crash;;
   setup) setup;;
   log) log;;
   disk) mount_unmount;;
   start|stop|restart) start_stop_restart;;
-  *) echo "No subcommand passed!"; exit 1;;
+  *) echo "err: No subcommand passed!"; exit 1;;
 esac

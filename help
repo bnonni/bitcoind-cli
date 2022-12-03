@@ -1,0 +1,72 @@
+NAME:
+     Bitcoind CLI: control script for starting bitcoind
+
+COMMAND:
+        bitcoind-cli: control script for starting bitcoind
+
+SUBCOMMANDS:
+            help:    show help
+            setup:   setup cli pathing
+            info:    show PIDs
+            disk:    interact with ext disk
+            log:     tail bitcoind logs
+            start:   start bitcoind
+            stop:    stop bitcoind
+            restart: restart bitcoind (stop + start)
+
+USAGE:
+      % bitcoind-cli [subcommand] [-arg | -option arg | --option arg]
+      % bitcoind-cli help
+      % bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]
+      % bitcoind-cli info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
+      % bitcoind-cli disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]
+      % bitcoind-cli log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
+      % bitcoind-cli disk [mount | unmount]
+      % bitcoind-cli crash
+      % bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+
+EXAMPLES:
+         - help: print info about the command, subcommands, usage and examples
+         % bitcoind-cli help
+
+         - setup: set the path to your blockchain data in shell profile
+         % bitcoind-cli setup /Volumes/BLOCKCHAIN 
+
+         - info: print the PIDs for the bitcoind processes
+         % bitcoind-cli info -all
+                 [-all | -testnet | -mainnet | -signet]
+                 [-n | --network all | mainnet | testnet | signet]
+
+         - disk: interact with an external disk housing blockchain data
+         % bitcoind-cli disk mount
+                 [mount | unmount]
+         
+         - crash: used for detecting an improper shutdown of bitcoind leaving behind a .pid file
+         % bitcoind-cli crash
+
+         - log: print the debug.log files for bitcoind using tail command
+         % bitcoind-cli log -all
+                 [-all | -testnet | -mainnet | -signet]
+                 [-n | --network all | mainnet | testnet | signet]
+
+         - start: start bitcoind, default: all & logging disabled
+         % bitcoind-cli start -all
+                 [-all | -testnet | -mainnet | -signet]
+                 [-n | --network all | mainnet | testnet | signet]
+                [-l | -log | --log]
+
+         - stop: stop bitcoind, default: all & logging disabled
+         % bitcoind-cli stop -all
+                 [-all | -testnet | -mainnet | -signet]
+                 [-n | --network all | mainnet | testnet | signet]
+
+         - restart: restart bitcoind, default: all & logging disabled
+         % bitcoind-cli restart -all
+                 [-all | -testnet | -mainnet | -signet]
+                 [-n | --network all | mainnet | testnet | signet]
+
+VERSION:
+        0.0.1
+
