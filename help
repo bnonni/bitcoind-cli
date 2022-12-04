@@ -1,9 +1,8 @@
-
 NAME:
-     bitcoind-cli \- All the functionality of bitcoind plus some bonus controls
+     Bitcoind CLI: control script for starting bitcoind
 
 COMMAND:
-        bitcoind-cli: scripts for fine-grained control over bitcoind
+        bitcoind-cli: control script for starting bitcoind
 
 SUBCOMMANDS:
             help:    show help
@@ -20,13 +19,13 @@ USAGE:
       % bitcoind-cli help
       % bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]
       % bitcoind-cli info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
-      % bitcoind-cli disk [mount | -m | --mount] [unmount | -u | --unmount]
+      % bitcoind-cli disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]
       % bitcoind-cli log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
       % bitcoind-cli disk [mount | unmount]
       % bitcoind-cli crash
-      % bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
-      % bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
-      % bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
+      % bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
 
 EXAMPLES:
          - help: print info about the command, subcommands, usage and examples
@@ -56,7 +55,7 @@ EXAMPLES:
          % bitcoind-cli start -all
                  [-all | -testnet | -mainnet | -signet]
                  [-n | --network all | mainnet | testnet | signet]
-                 [-l | -log | --log]
+                [-l | -log | --log]
 
          - stop: stop bitcoind, default: all & logging disabled
          % bitcoind-cli stop -all
@@ -69,8 +68,4 @@ EXAMPLES:
                  [-n | --network all | mainnet | testnet | signet]
 
 VERSION:
-        Homebrew 3.6.9
-        Homebrew/homebrew-core (git revision 9b415ba0fc6; last commit 2022-11-08)
-        Homebrew/homebrew-cask (git revision 11282d8a5e; last commit 2022-11-08)
-        bitcoind-cli 0.0.1
-
+        Bitcoind-CLI 0.0.1

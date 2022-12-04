@@ -96,9 +96,9 @@ BACKUP_FOLDER=$LOCAL_ETC/bak
 BACKUP_FILE=bitcoind-cli.bak
 BACKUP_FILE_FOLER_PATH=$BACKUP_FOLDER/$BACKUP_FILE
 
-LOCAL_MAN=/usr/local/man
+LOCAL_MAN=/usr/local/share/man/man1
 LOCAL_MAN_FOLDER=$LOCAL_MAN/man-$USER
-MAN_FILE=bitcoind-cli.man
+MAN_FILE=bitcoind-cli.1
 MAN_FILE_FOLER_PATH=$LOCAL_MAN_FOLDER/$MAN_FILE
 
 SHOW_HELP=$(echo "${ARGS[0]}" | tr -d -)
@@ -115,11 +115,11 @@ cp $BITCOIND_CLI_PATH $BACKUP_FILE_FOLER_PATH
 pretty_echo -s "bitcoind-cli backed up to $BACKUP_FILE_FOLER_PATH"
 
 pretty_echo -s "installing bitcoind-cli manual page ..."
-if [[ ! -e $LOCAL_MAN_FOLDER ]]; then 
-  mkdir $LOCAL_MAN_FOLDER
-fi
-cp $MAN_FILE $LOCAL_MAN_FOLDER
-pretty_echo -s "bitcoind-cli.man backed up to $LOCAL_MAN_FOLDER"
+# if [[ ! -e $LOCAL_MAN_FOLDER ]]; then 
+#   mkdir $LOCAL_MAN_FOLDER
+# fi
+cp $MAN_FILE $LOCAL_MAN
+pretty_echo -s "$MAN_FILE backed up to $LOCAL_MAN"
 
 if [[ $SHOW_HELP =~ ^(h|H|help)$ ]]; then
   bitcoind-cli help
