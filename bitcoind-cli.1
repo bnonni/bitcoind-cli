@@ -1,6 +1,6 @@
 .\" Manpage for bitcoind-cli.
 .\" Contact bryan@nonni.io to correct errors or typos.
-.TH man 8 "03 Dec 2022" "1.0" "nuseradd man page"
+.TH man 8 "03 Dec 2022" "1.0" "bitcoind-cli man page"
 .SH NAME
 bitcoind-cli \- All the functionality of bitcoind plus some bonus controls
 .SH SYNOPSIS
@@ -15,54 +15,132 @@ and mounting / unmounting an external SSD.
 help
         Print info about the cli, commands, usage and examples
 
-setup [--interactive] '\033[4mpath\033[0m'
+setup [--interactive] ['\033[4mfilepath\033[0m']
         Set the path to your blockchain data in shell profile
 
         -i, --interactive
-                Walks the user through an interactive setup via challenge / response
+                Uses terminal prompts to setup cli and env
 
+info [\033[4moptions\033[0m] ['\033[4network\033[0m']
+        Print the PIDs for the currently running bitcoind processes
 
-info '\033[4mpath\033[0m'
-        Print the PIDs for the bitcoind processes on each network
+        -all, -testnet, -mainnet, -signet
+                Single '-' style, explicit option flags for toggling network is mimicing
+                the original bitcoind / bitcoin-cli interface
 
-cleanup [options] [formula|cask ...]
-       Remove stale lock files and outdated downloads for all formulae and casks, and remove old versions of installed formulae. If arguments are specified, only do
-       this for the given formulae and casks. Removes all downloads more than 120 days old. This can be adjusted with HOMEBREW_CLEANUP_MAX_AGE_DAYS.
+        -n, --network [all|mainnet|testnet|signet]
+                Optional alternative to explicit, single '-' option flags
 
-       --prune
-              Remove all cache files older than specified days. If you want to remove everything, use --prune=all.
+log [\033[4moptions\033[0m] ['\033[4network\033[0m']
+        Continuously print the the bitcoind debug.log file(s) to stdout
 
-log '\033[4mpath\033[0m'
-        Set the path to your blockchain data in shell profile        
+        -all, -testnet, -mainnet, -signet
+                Single '-' style, explicit option flags for toggling network is mimicing
+                the original bitcoind / bitcoin-cli interface
 
-disk '\033[4mpath\033[0m'
-        Set the path to your blockchain data in shell profile
+        -n, --network [all|mainnet|testnet|signet]
+                Optional alternative to explicit, single '-' option flags
 
+disk '\033[4msubcommand\033[0m'
+        Interact with external disk containing blockchain data
 
+        mount
+                Mount the external disk
+        
+        unmount
+                Unmount the external disk
 
-info: print the PIDs for the bitcoind processes
-disk: interact with an external disk housing blockchain data
-crash: used for detecting an improper shutdown of bitcoind leaving behind a .pid file
-log: print the debug.log files for bitcoind using tail command
-start: start bitcoind, default: all & logging disabled
-stop: stop bitcoind, default: all & logging disabled
-restart: restart bitcoind, default: all & logging disabled
-
-info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
-disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]
-log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
-disk [mount | unmount]
 crash
-start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
-stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
-restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
-.SH COMMANDS
+        Detect improper shutdown of bitcoind leaving behind a .pid file
 
-.SH OPTIONS
-The nuseradd does not take any options. However, you can supply username.
-.SH SEE ALSO
-useradd(8), passwd(5), nuseradd.debian(8)
-.SH BUGS
-No known bugs.
+start [\033[4moptions\033[0m] ['\033[4network\033[0m']
+        Start bitcoind, default settings: mainnet & logging disabled
+
+        -all, -testnet, -mainnet, -signet
+                Single '-' style, explicit option flags for toggling network is mimicing
+                the original bitcoind / bitcoin-cli interface
+
+        -n, --network [all|mainnet|testnet|signet]
+                Optional alternative to explicit, single '-' option flags
+
+        -l, --log
+                Continuously print the the bitcoind debug.log file(s) to stdout
+
+stop [\033[4moptions\033[0m] ['\033[4network\033[0m']
+[\033[4moptions\033[0m] ['\033[4network\033[0m']
+        Stop bitcoind, default settings: mainnet & logging disabled
+
+        -all, -testnet, -mainnet, -signet
+                Single '-' style, explicit option flags for toggling network is mimicing
+                the original bitcoind / bitcoin-cli interface
+
+        -n, --network [all|mainnet|testnet|signet]
+                Optional alternative to explicit, single '-' option flags
+
+        -l, --log
+                Continuously print the the bitcoind debug.log file(s) to stdout
+
+restart [\033[4moptions\033[0m] ['\033[4network\033[0m']
+        Restart bitcoind, if no network passed, defaults to mainnet & logging disabled
+        Restart is essentially a stop, sleep and start
+
+        -all, -testnet, -mainnet, -signet
+                Single '-' style, explicit option flags for toggling network is mimicing
+                the original bitcoind / bitcoin-cli interface
+
+        -n, --network [all|mainnet|testnet|signet]
+                Optional alternative to explicit, single '-' option flags
+
+        -l, --log
+                Continuously print the the bitcoind debug.log file(s) to stdout
+
+.SH EXAMPLES
+-   Show the help menu
+        % bitcoind-cli help
+
+-   Set shell profile, blockchain data disk path, etc.
+        % bitcoind-cli setup /Volumes/BLOCKCHAIN
+
+-   Print the PIDs for all bitcoind network processes
+        % bitcoind-cli info -all
+
+-   Print the PID for bitcoind on mainnet
+        % bitcoind-cli info -n mainnet
+
+-   Mount the external drive contianing blockchain data
+        % bitcoind-cli disk mount
+
+-   Detect if bitcoind crashed previously and remove that .pid file
+        % bitcoind-cli crash
+
+-   Print the logs for all bitcoind network processes to stdout (WIP)
+        % bitcoind-cli log -all
+
+-   Print the log for bitcoind on mainnet to stdout
+        % bitcoind-cli log -n mainnet
+
+-   Start bitcoind on all networks
+        % bitcoind-cli start -all
+
+-   Start bitcoind on mainnet
+        % bitcoind-cli start -n mainnet
+
+-   Stop bitcoind on all networks
+        % bitcoind-cli stop -all
+
+-   Stop bitcoind on mainnet
+        % bitcoind-cli stop -n mainnet
+
+-   Restart (stop/start) bitcoind on all networks
+        % bitcoind-cli restart -all
+
+-   Restart bitcoind on mainnet
+        % bitcoind-cli restart -n mainnet
+
+.SH VERSION
+Bitcoind-cli 0.0.1
+
 .SH AUTHOR
-Vivek Gite (vivek@nixcraft.net.in)
+Bryan Nonni (bryan@nonni.io): bitcoind-cli 0.0.1
+Bitcoin Core Open Source (github.com/bitcoin/bitcoin): bitcoind 24.0.0
+Satoshi Nakamoto (satoshin@gmx.com): bitcoind 0.0.1

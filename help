@@ -20,13 +20,13 @@ USAGE:
       % bitcoind-cli help
       % bitcoind-cli setup [/path/to/blockchain/data | -i | --interactive]
       % bitcoind-cli info [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
-      % bitcoind-cli disk [-m | mount | -mount | --mount] [-u | unmount | -unmount | --unmount]
+      % bitcoind-cli disk [mount | -m | --mount] [unmount | -u | --unmount]
       % bitcoind-cli log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
       % bitcoind-cli disk [mount | unmount]
       % bitcoind-cli crash
-      % bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
-      % bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
-      % bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bitcoind-cli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
+      % bitcoind-cli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
+      % bitcoind-cli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | --log]
 
 EXAMPLES:
          - help: print info about the command, subcommands, usage and examples
@@ -56,7 +56,7 @@ EXAMPLES:
          % bitcoind-cli start -all
                  [-all | -testnet | -mainnet | -signet]
                  [-n | --network all | mainnet | testnet | signet]
-                [-l | -log | --log]
+                 [-l | -log | --log]
 
          - stop: stop bitcoind, default: all & logging disabled
          % bitcoind-cli stop -all

@@ -116,3 +116,9 @@ foo() {
     echo "Parameter #1 is $1"
 }
 foo input1;
+
+
+
+COMMAND=start
+NETWORK=all
+COMMAND_NETWORK="$COMMAND""_""$NETWORK"
