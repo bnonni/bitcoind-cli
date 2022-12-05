@@ -3,7 +3,7 @@
 OS=$(uname)
 VERSION="bitcoind-cli v0.0.2"
 print_help () {
-  pretty_echo $(cat $BITCOIND_CLI_MAN)
+  man bitcoind-cli
 }
 
 # ------------- SETUP ------------- #
@@ -218,7 +218,7 @@ crash () {
 # ------------- LOG ------------- #
 
 pretty_echo () {
-  pretty_echo "$COMMAND: $1"
+  echo "$COMMAND: $1"
 }
 
 log () {

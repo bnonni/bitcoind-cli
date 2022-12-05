@@ -77,13 +77,15 @@ if [[ ! $PWD == $BITCOIND_CLI_INSTALL_FOLDER ]]; then
 fi
 
 TEST_BITCOIND_CLI_REPO=$(cat $SHELL_PROFILE | grep BITCOIND_CLI_REPO=)
-TEST_BITCOIND_CLI_MAN=$(cat $SHELL_PROFILE | grep BITCOIND_CLI_MAN=)
+TEST_BITCOIND_CLI_MAN=$(cat $SHELL_PROFILE | grep BITCOIND_CLI_MAN_PAGE=)
 if [[ -z $TEST_BITCOIND_CLI_REPO ]]; then
   echo $'\n'"export BITCOIND_CLI_REPO=$PWD" >> $SHELL_PROFILE
+  source $SHELL_PROFILE
 fi
 
 if [[ -z $TEST_BITCOIND_CLI_MAN ]]; then
   echo $'\n'"export BITCOIND_CLI_MAN_PAGE=$MAN_FILE_FOLER_PATH" >> $SHELL_PROFILE
+  source $SHELL_PROFILE
 fi
 
 SHOW_HELP=$(echo "${ARGS[0]}" | tr -d -)
@@ -101,7 +103,7 @@ pretty_echo -s "bitcoind-cli backed up to $BACKUP_FILE_FOLER_PATH"
 
 pretty_echo -s "installing bitcoind-cli manual page ..."
 cp $MAN_FILE $LOCAL_MAN
-pretty_echo -s "$MAN_FILE backed up to $LOCAL_MAN"
+pretty_echo -s "$MAN_FILE installed to $LOCAL_MAN"
 
 if [[ $SHOW_HELP =~ ^(h|H|help)$ ]]; then
   bitcoind-cli help
@@ -109,7 +111,7 @@ elif [[ -z $SHOW_HELP ]]; then
   pretty_echo -s "would you like to see the bitcoind-cli usage guide? [y|N]"
   read SHOW_HELP
   if [[ $SHOW_HELP =~ ^(y|Y) ]]; then
-    man bitcoind-cli
+    bitcoind-cli help
   fi
   exit 0
 else
