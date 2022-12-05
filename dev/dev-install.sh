@@ -15,8 +15,23 @@ pretty_echo () {
   fi
 }
 
-echo '\033[38;5;208m -----------------------------------------------------------------------------------------------------------------\033[0m'
 
+OS=$(uname)
+ARGS=($@)
+LOCAL_BIN=/usr/local/bin
+BITCOIND_CLI=$PWD/bitcoind-cli
+BITCOIND_CLI_PATH=$LOCAL_BIN/bitcoind-cli
+
+LOCAL_ETC=/usr/local/etc
+BACKUP_FOLDER=$LOCAL_ETC/bak
+BACKUP_FILE=bitcoind-cli.bak
+BACKUP_FILE_FOLER_PATH=$BACKUP_FOLDER/$BACKUP_FILE
+
+LOCAL_MAN=/usr/local/share/man/man1
+MAN_FILE=bitcoind-cli.1
+MAN_FILE_FOLER_PATH=$LOCAL_MAN_FOLDER/$MAN_FILE
+
+echo '\033[38;5;208m -----------------------------------------------------------------------------------------------------------------\033[0m'
 # echo '\033[38;5;208m|                     __       __  ________  __         ______    ______   __       __  ________                  |\033[0m'
 # echo '\033[38;5;208m|                    /  |  _  /  |/        |/  |       /      \  /      \ /  \     /  |/        |                 |\033[0m'
 # echo '\033[38;5;208m|                    $$ | / \ $$ |$$$$$$$$/ $$ |      /$$$$$$  |/$$$$$$  |$$  \   /$$ |$$$$$$$$/                  |\033[0m'
@@ -83,23 +98,8 @@ BITCOIND_CLI_INSTALL_FOLDER=$(dirname $0)
 if [[ ! $PWD == $BITCOIND_CLI_INSTALL_FOLDER ]]; then
   cd $BITCOIND_CLI_INSTALL_FOLDER
   echo $'\n'"BITCOIND_CLI_REPO=$PWD" >> $SHELL_PROFILE
+  echo $'\n'"BITCOIND_CLI_MAN=" >> $SHELL_PROFILE
 fi
-
-OS=$(uname)
-ARGS=($@)
-LOCAL_BIN=/usr/local/bin
-BITCOIND_CLI=$PWD/bitcoind-cli
-BITCOIND_CLI_PATH=$LOCAL_BIN/bitcoind-cli
-
-LOCAL_ETC=/usr/local/etc
-BACKUP_FOLDER=$LOCAL_ETC/bak
-BACKUP_FILE=bitcoind-cli.bak
-BACKUP_FILE_FOLER_PATH=$BACKUP_FOLDER/$BACKUP_FILE
-
-LOCAL_MAN=/usr/local/share/man/man1
-LOCAL_MAN_FOLDER=$LOCAL_MAN/man-$USER
-MAN_FILE=bitcoind-cli.1
-MAN_FILE_FOLER_PATH=$LOCAL_MAN_FOLDER/$MAN_FILE
 
 SHOW_HELP=$(echo "${ARGS[0]}" | tr -d -)
 
@@ -127,7 +127,7 @@ elif [[ -z $SHOW_HELP ]]; then
   pretty_echo -s "would you like to see the bitcoind-cli usage guide? [y|N]"
   read SHOW_HELP
   if [[ $SHOW_HELP =~ ^(y|Y) ]]; then
-    bitcoind-cli help
+    man bitcoind-cli
   fi
   exit 0
 else

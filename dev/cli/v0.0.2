@@ -1,7 +1,7 @@
 #!/bin/bash
 # ------------- HELP ------------- #
 OS=$(uname)
-VERSION="bitcoind-cli v0.0.2"
+VERSION="bitcoind-cli 0.0.1"
 print_help () {
   pretty_echo $(cat $BITCOIND_CLI_MAN)
 }
@@ -452,16 +452,16 @@ CONF=$BITCOIN/bitcoin.conf
 
 DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
 
-CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
+BITCOIND_CLI_MAN=$BITCOIND_CLI_MAN
 if [[ -z $BITCOIND_CLI_MAN ]]; then
   pretty_echo "err: bitcoind-cli manual missing"
-  pretty_echo "Did you run doc/install.sh? [y/N]"
+  pretty_echo "Did you run install.bitcoind.cli.sh? [y/N]"
   read MAN_INSTALL_ANSWER
   if [[ $MAN_INSTALL_ANSWER =~ ^(n|N)$ ]]; then
     pretty_echo "Would you like to install bitcoind-cli? [y/N]"
     read CLI_INSTALL_ANSWER
     if [[ $CLI_INSTALL_ANSWER =~ ^(y|Y)$ ]]; then
-      sh "$BITCOIND_CLI_REPO/doc/install.sh"
+      sh "$BITCOIND_CLI_REPO/install.bitcoind.cli.sh"
     else
       echo "ok! please install bitcoind-cli manually to continue"
     fi
