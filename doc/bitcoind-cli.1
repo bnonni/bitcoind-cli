@@ -15,33 +15,33 @@ and mounting / unmounting an external SSD.
 help
         Print info about the cli, commands, usage and examples
 
-setup [--interactive] ['\033[4mfilepath\033[0m']
+setup [--interactive] [filepath]
         Set the path to your blockchain data in shell profile
 
         -i, --interactive
                 Uses terminal prompts to setup cli and env
 
-info [\033[4moptions\033[0m] ['\033[4network\033[0m']
+info [options] [network]
         Print the PIDs for the currently running bitcoind processes
 
         -all, -testnet, -mainnet, -signet
-                Single '-' style, explicit option flags for toggling network is mimicing
+                Single "-" style, explicit option flags for toggling network is mimicing
                 the original bitcoind / bitcoin-cli interface
 
         -n, --network [all|mainnet|testnet|signet]
-                Optional alternative to explicit, single '-' option flags
+                Optional alternative to explicit, single "-" option flags
 
-log [\033[4moptions\033[0m] ['\033[4network\033[0m']
+log [options] [network]
         Continuously print the the bitcoind debug.log file(s) to stdout
 
         -all, -testnet, -mainnet, -signet
-                Single '-' style, explicit option flags for toggling network is mimicing
+                Single "-" style, explicit option flags for toggling network is mimicing
                 the original bitcoind / bitcoin-cli interface
 
         -n, --network [all|mainnet|testnet|signet]
                 Optional alternative to explicit, single '-' option flags
 
-disk '\033[4msubcommand\033[0m'
+disk [subcommand]
         Interact with external disk containing blockchain data
 
         mount
@@ -53,43 +53,42 @@ disk '\033[4msubcommand\033[0m'
 crash
         Detect improper shutdown of bitcoind leaving behind a .pid file
 
-start [\033[4moptions\033[0m] ['\033[4network\033[0m']
+start [options] [network]
         Start bitcoind, default settings: mainnet & logging disabled
 
         -all, -testnet, -mainnet, -signet
-                Single '-' style, explicit option flags for toggling network is mimicing
+                Single "-" style, explicit option flags for toggling network is mimicing
                 the original bitcoind / bitcoin-cli interface
 
         -n, --network [all|mainnet|testnet|signet]
-                Optional alternative to explicit, single '-' option flags
+                Optional alternative to explicit, single "-" option flags
 
         -l, --log
                 Continuously print the the bitcoind debug.log file(s) to stdout
 
-stop [\033[4moptions\033[0m] ['\033[4network\033[0m']
-[\033[4moptions\033[0m] ['\033[4network\033[0m']
+stop [options] [network]
         Stop bitcoind, default settings: mainnet & logging disabled
 
         -all, -testnet, -mainnet, -signet
-                Single '-' style, explicit option flags for toggling network is mimicing
+                Single "-" style, explicit option flags for toggling network is mimicing
                 the original bitcoind / bitcoin-cli interface
 
         -n, --network [all|mainnet|testnet|signet]
-                Optional alternative to explicit, single '-' option flags
+                Optional alternative to explicit, single "-" option flags
 
         -l, --log
                 Continuously print the the bitcoind debug.log file(s) to stdout
 
-restart [\033[4moptions\033[0m] ['\033[4network\033[0m']
+restart [options] [network]
         Restart bitcoind, if no network passed, defaults to mainnet & logging disabled
         Restart is essentially a stop, sleep and start
 
         -all, -testnet, -mainnet, -signet
-                Single '-' style, explicit option flags for toggling network is mimicing
+                Single "-" style, explicit option flags for toggling network is mimicing
                 the original bitcoind / bitcoin-cli interface
 
         -n, --network [all|mainnet|testnet|signet]
-                Optional alternative to explicit, single '-' option flags
+                Optional alternative to explicit, single "-" option flags
 
         -l, --log
                 Continuously print the the bitcoind debug.log file(s) to stdout
@@ -138,9 +137,7 @@ restart [\033[4moptions\033[0m] ['\033[4network\033[0m']
         % bitcoind-cli restart -n mainnet
 
 .SH VERSION
-Bitcoind-cli 0.0.1
+bitcoind-cli 0.0.2
 
 .SH AUTHOR
-Bryan Nonni (bryan@nonni.io): bitcoind-cli 0.0.1
-Bitcoin Core Open Source (github.com/bitcoin/bitcoin): bitcoind 24.0.0
-Satoshi Nakamoto (satoshin@gmx.com): bitcoind 0.0.1
+Bryan Nonni (bryan@nonni.io): bitcoind-cli 0.0.2
