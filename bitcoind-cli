@@ -1,13 +1,8 @@
-#!/bin/bash
-# ------------- HELP ------------- #
+#!/usr/bin/env bash
 OS=$(uname)
 VERSION="bitcoind-cli v0.0.2"
-print_help () {
-  man bitcoind-cli
-}
 
 # ------------- SETUP ------------- #
-
 setup () {
   SETUP_DIR=${ARGS[1]}
   INTERACTIVE_SETUP=${ARGS[1]}
@@ -453,7 +448,7 @@ CONF=$BITCOIN/bitcoin.conf
 DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
 
 CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
-if [[ -z $BITCOIND_CLI_MAN ]]; then
+if [[ -z $CLI_MAN_PAGE ]]; then
   pretty_echo "err: bitcoind-cli manual missing"
   pretty_echo "Did you run doc/install.sh? [y/N]"
   read MAN_INSTALL_ANSWER
@@ -495,7 +490,8 @@ fi
 
 case $COMMAND in
   version) echo "$VERSION";;
-  help) print_help;;
+  help) cat $BITCOIND_CLI_REPO/help;;
+  man) man bitcoind-cli;;
   info) info;;
   crash) crash;;
   setup) setup;;
