@@ -2,6 +2,18 @@
 OS=$(uname)
 VERSION="bitcoind-cli v0.0.2"
 
+print_version () {
+  echo "$VERSION";
+}
+
+show_help () {
+  cat $BITCOIND_CLI_REPO/help;
+}
+
+open_man () {
+  man bitcoind-cli;
+}
+
 # ------------- SETUP ------------- #
 setup () {
   SETUP_DIR=${ARGS[1]}
@@ -273,7 +285,6 @@ start_stop_restart () {
   restart_mainnet|restart_) restart_mainnet;;
            restart_testnet) restart_bitcoind_testnet;;
             restart_signet) restart_bitcoind_signet;;
-      
                          *) echo "err: COMMAND missing or improperly passed!"; exit 1;;
     esac;
 }
@@ -489,14 +500,14 @@ if [[ ! -z $SHELL_PROFILE ]]; then
 fi
 
 case $COMMAND in
-  version) echo "$VERSION";;
-  help) cat $BITCOIND_CLI_REPO/help;;
-  man) man bitcoind-cli;;
+  version) print_version;;
+  help) show_help;;
+  man) open_man;;
   info) info;;
   crash) crash;;
   setup) setup;;
   log) log;;
   disk) mount_unmount;;
   start|stop|restart) start_stop_restart;;
-  *) echo "err: No COMMAND passed!";;
+  *) echo "err: No command passed";;
 esac
