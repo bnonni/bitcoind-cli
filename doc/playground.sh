@@ -103,7 +103,7 @@ echo "NAME:" $'\n'$'\t'\
 "[-all | -testnet | -mainnet | -signet]" $'\n'$'\t'$'\t'\
 "[-n | --network all | mainnet | testnet | signet] "$'\n'$'\n'\
 "VERSION:" $'\n'$'\t'\
-"0.0.1" $'\n';
+"0.0.3" $'\n';
 exit 0;
 
 echo $PWD

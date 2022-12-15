@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 OS=$(uname)
-VERSION="bdcli v0.0.2"
+VERSION="bdcli v0.0.3"
 
 print_version () {
   echo "$VERSION";
