@@ -1,13 +1,13 @@
-.\" Manpage for bitcoind-cli.
+.\" Manpage for bdcli.
 .\" Contact bryan@nonni.io to correct errors or typos.
-.TH man 1 "03 Dec 2022" "1.0" "bitcoind-cli man page"
+.TH man 1 "03 Dec 2022" "1.0" "bdcli man page"
 .SH NAME
-bitcoind-cli \- All the functionality of bitcoind plus some bonus controls
+bdcli \- All the functionality of bitcoind plus some bonus controls
 .SH SYNOPSIS
-bitcoind-cli version
-bitcoind-cli command [--version|-v] [options] ...
+bdcli version
+bdcli command [--version|-v] [options] ...
 .SH DESCRIPTION
-bitcoind-cli bridges bitcoind and the local OS to provide users with a more fine-grained control over bitcoind. It offers the ability
+bdcli bridges bitcoind and the local OS to provide users with a more fine-grained control over bitcoind. It offers the ability
 to interact with all three networks at the same time using flags. Basic functionality includes starting and stopping bitcoind on main, test and signet.
 Extended functionality includes easily printing the PIDs of all bitcoind processes, detecting if bitcoind crashed, easily logging output on all networks,
 and mounting / unmounting an external SSD.
@@ -95,49 +95,49 @@ restart [options] [network]
 
 .SH EXAMPLES
 -   Show the help menu
-        % bitcoind-cli help
+        % bdcli help
 
 -   Set shell profile, blockchain data disk path, etc.
-        % bitcoind-cli setup /Volumes/BLOCKCHAIN
+        % bdcli setup /Volumes/BLOCKCHAIN
 
 -   Print the PIDs for all bitcoind network processes
-        % bitcoind-cli info -all
+        % bdcli info -all
 
 -   Print the PID for bitcoind on mainnet
-        % bitcoind-cli info -n mainnet
+        % bdcli info -n mainnet
 
 -   Mount the external drive contianing blockchain data
-        % bitcoind-cli disk mount
+        % bdcli disk mount
 
 -   Detect if bitcoind crashed previously and remove that .pid file
-        % bitcoind-cli crash
+        % bdcli crash
 
 -   Print the logs for all bitcoind network processes to stdout (WIP)
-        % bitcoind-cli log -all
+        % bdcli log -all
 
 -   Print the log for bitcoind on mainnet to stdout
-        % bitcoind-cli log -n mainnet
+        % bdcli log -n mainnet
 
 -   Start bitcoind on all networks
-        % bitcoind-cli start -all
+        % bdcli start -all
 
 -   Start bitcoind on mainnet
-        % bitcoind-cli start -n mainnet
+        % bdcli start -n mainnet
 
 -   Stop bitcoind on all networks
-        % bitcoind-cli stop -all
+        % bdcli stop -all
 
 -   Stop bitcoind on mainnet
-        % bitcoind-cli stop -n mainnet
+        % bdcli stop -n mainnet
 
 -   Restart (stop/start) bitcoind on all networks
-        % bitcoind-cli restart -all
+        % bdcli restart -all
 
 -   Restart bitcoind on mainnet
-        % bitcoind-cli restart -n mainnet
+        % bdcli restart -n mainnet
 
 .SH VERSION
-bitcoind-cli 0.0.2
+bdcli 0.0.2
 
 .SH AUTHOR
-Bryan Nonni (bryan@nonni.io): bitcoind-cli 0.0.2
+Bryan Nonni (bryan@nonni.io): bdcli 0.0.2

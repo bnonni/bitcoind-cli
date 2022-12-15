@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 OS=$(uname)
-VERSION="bitcoind-cli v0.0.2"
+VERSION="bdcli v0.0.2"
 
 print_version () {
   echo "$VERSION";
@@ -11,7 +11,7 @@ show_help () {
 }
 
 open_man () {
-  man bitcoind-cli;
+  man bdcli;
 }
 
 # ------------- SETUP ------------- #
@@ -23,7 +23,6 @@ setup () {
 
   TEST=$(cat $SHELL_PROFILE | grep BLOCKCHAIN_DIR=)
   if [[ ! -z $TEST ]]; then
-    source $SHELL_PROFILE
     prompt_setup;
   elif [[ -z $SETUP_DIR && -z $INTERACTIVE_SETUP ]]; then
     pretty_echo "error: arg/option missing"
@@ -66,7 +65,7 @@ setup () {
     fi
   fi
 
-  pretty_echo "success: bitcoind-cli"
+  pretty_echo "success: bdcli"
   exit 0;
 }
 
@@ -77,7 +76,8 @@ prompt_setup () {
   if [[ $ANSWER =~ ^(n|N)$ ]]; then
     pretty_echo "please enter path to your blockchain data:"
     read BLOCKCHAIN_DIR
-    set_shell;
+    # cp $SHELL_PROFILE $SHELL_PROFILE.bak
+    # cat $SHELL_PROFILE | sed 's/export BLOCKCHAIN_DIR=.*/export BLOCKCHAIN_DIR=\/Volumes\/bBLOCKCHAIN/g' > $SHELL_PROFILE
     finish_setup;
   fi;
   exit 0;
@@ -154,7 +154,7 @@ mount_unmount () {
         pretty_echo "running setup ..."
         setup;
       else
-        pretty_echo "ok! please run bitcoind-cli setup to set BLOCKCHAIN dir. Run bitcoind-cli help for assistance";
+        pretty_echo "ok! please run bdcli setup to set BLOCKCHAIN dir. Run bdcli help for assistance";
       fi
     fi
   else
@@ -309,9 +309,6 @@ start_all () {
   start_mainnet;
   start_testnet;
   start_signet;
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
 }
 
 start_mainnet () {
@@ -324,7 +321,7 @@ start_mainnet () {
         /usr/local/bin/bitcoind -conf=$CONF
         pretty_echo "Running bitcoind from $BITCOIN"
       else
-        pretty_echo "Bitcoind process detected. Please shut use bitcoind-cli restart."
+        pretty_echo "Bitcoind process detected. Please shut use bdcli restart."
         exit 0
       fi
     fi
@@ -333,6 +330,9 @@ start_mainnet () {
     pretty_echo "Running bitcoind from $BITCOIN"
   fi
   pretty_echo "bitcoind PID: $(cat $PID_FILE)";
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet;
+  fi;
 }
 
 start_testnet () {
@@ -343,6 +343,9 @@ start_testnet () {
     pretty_echo "already running bitcoind testnet from $BITCOIN";
   fi;
   pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet;
+  fi;
 }
 
 start_signet () {
@@ -353,6 +356,9 @@ start_signet () {
     pretty_echo "already running bitcoind signet from $BITCOIN"
   fi;
   pretty_echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet;
+  fi;
 }
 
 # ---- STOP ---- #
@@ -361,10 +367,6 @@ stop_all () {
   stop_mainnet;
   stop_testnet;
   stop_signet;
-  
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(-l|-log|--log)$ ]]; then
-    log;
-  fi;
 }
 
 stop_mainnet () {
@@ -376,6 +378,10 @@ stop_mainnet () {
     echo "bitcoind PID $(cat $PID_FILE) stopped!";
   else
     echo "$PID_FILE file not detected! Are you sure bitcoind is running on mainnet?"
+  fi;
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet;
   fi;
 }
 
@@ -389,6 +395,10 @@ stop_testnet () {
   else
     pretty_echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
   fi;
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet;
+  fi;
 }
 
 stop_signet () {
@@ -400,6 +410,10 @@ stop_signet () {
     pretty_echo "bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
   else
     pretty_echo "$SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
+  fi;
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet;
   fi;
 }
 
@@ -414,62 +428,63 @@ restart_mainnet () {
   stop_mainnet;
   sleep 10;
   start_mainnet;
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet;
+  fi;
 }
 
 restart_testnet () {
   stop_testnet;
   sleep 10;
   start_testnet;
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet;
+  fi;
 }
 
 restart_signet () {
   stop_signet;
   sleep 10;
   start_signet;
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet;
+  fi;
 }
 
 # ------------- VARS, ARGS & SETUP ------------- #
 
-ARGS=($@)
+ARGS=( "$@" )
 COMMAND=${ARGS[0]}
-LOG=${ARGS[1]}
-# e.g. 1 - bitcoind-cli start -mainnet
-# e.g. 2 - bitcoind-cli start -n mainnet
-# e.g. 3 - bitcoind-cli start --network mainnet
-# e.g. 4 - bitcoind-cli start -mainnet -l | -log | --log
-# e.g. 2 - bitcoind-cli start -n mainnet
-# e.g. 3 - bitcoind-cli start --network mainnet
+
 if [[ ${ARGS[1]} =~ ^(-n|--network)$ ]]; then
-  NETWORK_ARG=${ARGS[1]}
-  NETWORK=${ARGS[2]}
-  LOG=${ARGS[3]}
-  if [[ ! -z $NETWORK_ARG && -z $NETWORK ]]; then
+  NETWORK_FLAG=1
+  NETWORK=$(echo ${ARGS[2]} | sed 's/-//g')
+  LOG=$(echo ${ARGS[3]} | sed 's/-//g')
+  if [[ -z $NETWORK ]]; then
     echo "$COMMAND err: Network flag -n | --network passed but no network arg detected!"
   fi
+else
+  LOG=$(echo ${ARGS[2]} | sed 's/-//g')
+  NETWORK=$(echo ${ARGS[1]} | sed 's/-//g')
 fi
 
-NETWORK_ARG=${ARGS[1]}
-NETWORK=$(echo "$NETWORK_ARG" | tr -d -)
-
 BLOCKCHAIN=$BLOCKCHAIN_DIR
-
 BITCOIN=$BLOCKCHAIN/.bitcoin
 CONF=$BITCOIN/bitcoin.conf
-
 DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
 
 CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
 if [[ -z $CLI_MAN_PAGE ]]; then
-  pretty_echo "err: bitcoind-cli manual missing"
+  pretty_echo "err: bdcli manual missing"
   pretty_echo "Did you run doc/install.sh? [y/N]"
   read MAN_INSTALL_ANSWER
   if [[ $MAN_INSTALL_ANSWER =~ ^(n|N)$ ]]; then
-    pretty_echo "Would you like to install bitcoind-cli? [y/N]"
+    pretty_echo "Would you like to install bdcli? [y/N]"
     read CLI_INSTALL_ANSWER
     if [[ $CLI_INSTALL_ANSWER =~ ^(y|Y)$ ]]; then
       sh "$BITCOIND_CLI_REPO/doc/install.sh"
     else
-      echo "ok! please install bitcoind-cli manually to continue"
+      pretty_echo "ok! please install bdcli manually to continue"
     fi
   fi
 fi
@@ -509,5 +524,5 @@ case $COMMAND in
   log) log;;
   disk) mount_unmount;;
   start|stop|restart) start_stop_restart;;
-  *) echo "err: No command passed";;
+  *) echo "err: no command passed";;
 esac
