@@ -1,477 +1,35 @@
 #!/usr/bin/env bash
-OS=$(uname)
-VERSION="bdcli v0.0.3"
-
-print_version () {
-  echo "$VERSION";
-}
-
-show_help () {
-  cat $BITCOIND_CLI_REPO/help;
-}
-
-open_man () {
-  man bdcli;
-}
-
-# ------------- SETUP ------------- #
-setup () {
-  SETUP_DIR=${ARGS[1]}
-  INTERACTIVE_SETUP=${ARGS[1]}
-
-  set_shell;
-
-  TEST=$(cat $SHELL_PROFILE | grep BLOCKCHAIN_DIR=)
-  if [[ ! -z $TEST ]]; then
-    prompt_setup;
-  elif [[ -z $SETUP_DIR && -z $INTERACTIVE_SETUP ]]; then
-    pretty_echo "error: arg/option missing"
-    pretty_echo "non-interactive setup requires path arg"
-    exit 0;
-  else
-    if [[ -z $BLOCKCHAIN  ]]; then
-      pretty_echo "please enter path to your blockchain data:"
-      read BLOCKCHAIN_DIR
-      finish_setup;
-    else
-      prompt_setup;
-    fi
-    finish_setup;
-  fi
-
-  if [[ -z $BLOCKCHAIN  ]]; then
-    pretty_echo "error: shell profile may be improperly setup"
-    pretty_echo "debug info"
-    pretty_echo "--------- SHELL: $SHELL"
-    pretty_echo "--------- SHELL_PROFILE: $SHELL_PROFILE"
-    exit 1;
-  fi
-  
-  if [[ ! -d $BLOCKCHAIN ]]; then
-    pretty_echo "disk not mounted"
-    pretty_echo "would you like to mount disk at $BLOCKCHAIN? [y/n]"
-    read DO_MOUNT
-    if [[ $DO_MOUNT =~ ^(y|Y)$ ]]; then
-      case $OS in
-        Darwin) test -z $DISK_NAME && pretty_echo "Please run setup to set your disk name"
-                DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }')
-                diskutil mount $DISK;;
-        *) pretty_echo "unimplemented auto mount"
-           pretty_echo "please mount disk manually";;
-      esac;
-    else
-      pretty_echo "ok"
-      pretty_echo "please mount disk manually"
-    fi
-  fi
-
-  pretty_echo "success: bdcli"
-  exit 0;
-}
-
-prompt_setup () {
-  pretty_echo "BLOCKCHAIN_DIR set to $BLOCKCHAIN"
-  pretty_echo "correct? [y/N]"
-  read ANSWER
-  if [[ $ANSWER =~ ^(n|N)$ ]]; then
-    pretty_echo "please enter path to your blockchain data:"
-    read BLOCKCHAIN_DIR
-    # cp $SHELL_PROFILE $SHELL_PROFILE.bak
-    # cat $SHELL_PROFILE | sed 's/export BLOCKCHAIN_DIR=.*/export BLOCKCHAIN_DIR=\/Volumes\/bBLOCKCHAIN/g' > $SHELL_PROFILE
-    finish_setup;
-  fi;
-  exit 0;
-}
-
-set_shell () {
-  BASHRC=~/.bashrc
-  BASH_PROFILE=~/.bash_profile
-
-  ZSHRC=~/.zshrc
-  ZSH_PROFILE=~/.zsh_profile
-
-  PROFILE=~/.profile
-
-  if [[ $SHELL == "/bin/bash" ]]; then
-    if [[ -f $BASHRC ]]; then
-      SHELL_PROFILE=$BASHRC
-    fi
-    if [[ -f $BASH_PROFILE ]]; then
-      SHELL_PROFILE=$BASH_PROFILE
-    fi
-  elif [[ $SHELL == "/bin/zsh" ]]; then
-    if [[ -f $ZSHRC ]]; then
-      SHELL_PROFILE=$ZSHRC
-    fi
-    if [[ -f $ZSH_PROFILE ]]; then
-      SHELL_PROFILE=$ZSH_PROFILE
-    fi
-  elif [[ -f $PROFILE  ]]; then
-    SHELL_PROFILE=$PROFILE
-  else
-    touch ~/$PROFILE
-    SHELL_PROFILE=$PROFILE
-  fi;
-}
-
-finish_setup () {
-  echo $'\n'"export BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR" >> $SHELL_PROFILE;
-  source $SHELL_PROFILE
-  pretty_echo "BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR"
-}
-
-mount_unmount () {
-  # TODO: finish additional flags -m, -u, --mount, --unmount 
-  COMMAND=$(echo "${ARGS[1]}" | tr -d -)
-  case $OS in
-    Darwin) DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }');;
-    # TODO: finish Linux OS
-     Linux) TODO ;;
-         *) pretty_echo "unimplemented auto mount for OS: $OS"
-            pretty_echo "please mount disk manually";;
-  esac;
-  if [[ ! -z $DISK ]]; then
-    if [[ ! -z $BLOCKCHAIN ]]; then
-      pretty_echo "do you want to $COMMAND the disk at $BLOCKCHAIN [y/n]";
-      read DISK_ANSWER;
-      if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
-        diskutil $COMMAND $DISK
-        SUCCESS=$(echo $!)
-        case $SUCCESS in
-          0) pretty_echo "$DISK $COMMAND success"
-             exit 0;;
-          1) pretty_echo "$DISK $COMMAND fail"
-             exit 1;;
-        esac
-      else
-        pretty_echo "ok"
-        pretty_echo "please $COMMAND disk manually";
-      fi
-    else
-      echo "$COMMAND error: BLOCKCHAIN=$BLOCKCHAIN: path to external disk missing! Would you like to run setup to set dir?"
-      read SETUP_ANSWER;
-      if [[ $SETUP_ANSWER =~ ^(y|Y)$ ]]; then
-        pretty_echo "running setup ..."
-        setup;
-      else
-        pretty_echo "ok! please run bdcli setup to set BLOCKCHAIN dir. Run bdcli help for assistance";
-      fi
-    fi
-  else
-    pretty_echo "disk $COMMAND error: disk not found"
-    pretty_echo "are you sure the disk is mounted?"
-    exit 1;
-  fi;
-}
-
-# ------------- INFO ------------- #
-
-info () {
-  if [[ ! -e "$PID_FILE" || ! -e "$TESTNET_PID_FILE" || ! -e "$SIGNET_PID_FILE" ]]; then
-    pretty_echo "no PID files detected"
-    if [[ $NETWORK =~ ^(all)$ ]]; then
-      NETWORK="mainnet, testnet and/or signet"
-    fi
-    pretty_echo "bitcoind does not appear to be running on $NETWORK"
-    interactive_start;
-    exit 0;
-  fi
-
-  MAINNET_PID_MSG="bitcoind PID: $(cat $PID_FILE)";
-  MAINNET_P="error: no bitcoind.pid file detected at $BITCOIN/bitcoind.pid"
-  
-  TESTNET_PID_MSG="bitcoind testnet PID: $(cat $TESTNET_PID_FILE)"
-  TESTNET_PID_ERR="error: no bitcoind.pid file detected at $BITCOIN/testnet3/bitcoind.pid"
-  
-  SIGNET_PID_MSG="bitcoind signet PID: $(cat $TESTNET_PID_FILE)"
-  SIGNET_PID_ERR="error: no bitcoind.pid file detected at $BITCOIN/signet/bitcoind.pid"
-  
-  case $NETWORK in
-           all) test -e $PID_FILE && pretty_echo $MAINNET_PID_MSG || pretty_echo $MAINNET_PID_ERR
-                test -e $TESTNET_PID_FILE && pretty_echo $TESTNET_PID_MSG || pretty_echo $TESTNET_PID_ERR
-                test -e $SIGNET_PID_FILE && pretty_echo $SIGNET_PID_MSG || pretty_echo $SIGNET_PID_ERR;;
-    
-    mainnet|"") test -e $PID_FILE && pretty_echo $MAINNET_PID_MSG || pretty_echo $MAINNET_PID_ERR;;
-       
-       testnet) test -e $TESTNET_PID_FILE && pretty_echo $TESTNET_PID_MSG || pretty_echo $TESTNET_PID_ERR;;
-        
-        signet) test -e $SIGNET_PID_FILE && pretty_echo $SIGNET_PID_MSG || pretty_echo $SIGNET_PID_ERR;;
-             
-             *)  pretty_echo "error: network arg missing";;
-  esac
-  exit 0;
-}
-
-# ------------- CRASH ------------- #
-
-crash () {
-  if [[ -e "$PID_FILE" ]]; then
-    pretty_echo "are you sure you want to delete pid file at $PID_FILE? [y/N]"
-    read DELETE_ANSWER
-    if [[ $DELETE_ANSWER =~ ^(y|Y)$ ]]; then
-      pretty_echo "deleting"
-      rm -rf $BITCOIN/bitcoind.pid
-      interactive_start;
-    else
-      pretty_echo "aborting!"
-    fi
-  else
-    pretty_echo "no bitcoind.pid file detected at $BITCOIN/bitcoind.pid"
-    interactive_start;
-  fi
-  exit 0;
-}
-
-# ------------- LOG ------------- #
-
-pretty_echo () {
-  echo "$COMMAND: $1"
-}
-
-log () {
-  pretty_echo "logging enabled!"
-  case $NETWORK in
-    all) log_all;;
-    mainnet|"") log_mainnet;;
-    testnet) log_testnet;;
-    signet) log_signet;;
-    *) pretty_echo "network arg missing or improperly passed!"
-       exit 1;;
-  esac;
-}
-
-log_all () {
-  pretty_echo "logging mainnet $LOG_FILE"
-  tail -f $LOG_FILE
-  pretty_echo "logging testnet $TESTNET_LOG_FILE"
-  tmux new-session -d -s testnet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/testnet3/debug.log"
-  tmux attach;
-  pretty_echo "logging signet $SIGNET_LOG_FILE"
-  tmux new-session -d -s signet_logs "tail -f /Volumes/BLOCKCHAIN/.bitcoin/signet/debug.log"
-  tmux attach;
-}
-
-log_mainnet () {
-  pretty_echo "logging mainnet $LOG_FILE"
-  tail -f $LOG_FILE;
-}
-
-log_testnet () {
-  pretty_echo "logging testnet $TESTNET_LOG_FILE"
-  tail -f $TESTNET_LOG_FILE;
-}
-
-log_signet () {
-  pretty_echo "logging signet $SIGNET_LOG_FILE"
-  tail -f $SIGNET_LOG_FILE;
-}
-
-# ------------- START / STOP ------------- #
-
-start_stop_restart () {
-  COMMAND_NETWORK="$COMMAND""_""$NETWORK"
-  case $COMMAND_NETWORK in
-                 start_all) start_all;;
-      start_mainnet|start_) start_mainnet;;
-             start_testnet) start_testnet;;
-              start_signet) start_signet;;
-
-                  stop_all) stop_all;;
-        stop_mainnet|stop_) stop_mainnet;;
-              stop_testnet) stop_testnet;;
-               stop_signet) stop_signet;;
-
-               restart_all) restart_all;;
-  restart_mainnet|restart_) restart_mainnet;;
-           restart_testnet) restart_bitcoind_testnet;;
-            restart_signet) restart_bitcoind_signet;;
-                         *) echo "err: COMMAND missing or improperly passed!"; exit 1;;
-    esac;
-}
-
-interactive_start () {
-  pretty_echo "start bitcoind? [y/N]"
-  read START_ANSWER
-  if [[ $START_ANSWER =~ ^(y|Y)$ ]]; then
-    pretty_echo "which network? [all/mainnet/testnet/signet]"
-    pretty_echo "Note: leave answer blank to start mainnet only"
-    # add check for misspellings
-    read NETWORK
-    start_mainnet;
-  else
-    pretty_echo "ok"
-  fi
-}
-
-# ---- START ---- #
-
-start_all () {
-  start_mainnet;
-  start_testnet;
-  start_signet;
-}
-
-start_mainnet () {
-  if [ -e "$PID_FILE" ]; then
-    pretty_echo "Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
-    read START_ANSWER
-    if [[ $START_ANSWER =~ ^(n|N) ]]; then
-      BITCOIND_PROCESS_TEST=$(ps aux | grep -v 'grep' | grep 'bitcoind' | awk '{ print $0 }')
-      if [[ -z $BITCOIND_PROCESS_TEST ]]; then
-        /usr/local/bin/bitcoind -conf=$CONF
-        pretty_echo "Running bitcoind from $BITCOIN"
-      else
-        pretty_echo "Bitcoind process detected. Please shut use bdcli restart."
-        exit 0
-      fi
-    fi
-  else
-    /usr/local/bin/bitcoind -conf=$CONF
-    pretty_echo "Running bitcoind from $BITCOIN"
-  fi
-  pretty_echo "bitcoind PID: $(cat $PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_mainnet;
-  fi;
-}
-
-start_testnet () {
-  if [ ! -e "$TESTNET_PID_FILE" ]; then
-    /usr/local/bin/bitcoind -testnet -conf=$CONF;
-    pretty_echo "running bitcoind testnet from $BITCOIN";
-  else
-    pretty_echo "already running bitcoind testnet from $BITCOIN";
-  fi;
-  pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_testnet;
-  fi;
-}
-
-start_signet () {
-  if [ ! -e "$SIGNET_PID_FILE" ]; then
-    /usr/local/bin/bitcoind -signet -conf=$CONF
-    pretty_echo "running bitcoind signet from $BITCOIN"
-  else
-    pretty_echo "already running bitcoind signet from $BITCOIN"
-  fi;
-  pretty_echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)";
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_signet;
-  fi;
-}
-
-# ---- STOP ---- #
-
-stop_all () {
-  stop_mainnet;
-  stop_testnet;
-  stop_signet;
-}
-
-stop_mainnet () {
-  if [ -e "$PID_FILE" ]; then
-    /usr/local/bin/bitcoin-cli -conf=$CONF stop
-    # do check for bitcoind still starting
-    # if kill -9, must remove .pid files
-    echo "Stopping bitcoind from $BITCOIN"
-    echo "bitcoind PID $(cat $PID_FILE) stopped!";
-  else
-    echo "$PID_FILE file not detected! Are you sure bitcoind is running on mainnet?"
-  fi;
-
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_mainnet;
-  fi;
-}
-
-stop_testnet () {
- if [ -e "$TESTNET_PID_FILE" ]; then
-    /usr/local/bin/bitcoin-cli -testnet -conf=$CONF stop
-    # do check for bitcoind still starting
-    # if kill -9, must remove .pid files
-    pretty_echo "Stopping bitcoind testnet from $BITCOIN"
-    pretty_echo "bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!";
-  else
-    pretty_echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
-  fi;
-
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_testnet;
-  fi;
-}
-
-stop_signet () {
- if [ -e "$SIGNET_PID_FILE" ]; then
-    /usr/local/bin/bitcoin-cli -signet -conf=$CONF stop
-    # do check for bitcoind still starting
-    # if kill -9, must remove .pid files
-    pretty_echo "Stopping bitcoind signet from $BITCOIN"
-    pretty_echo "bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!";
-  else
-    pretty_echo "$SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
-  fi;
-
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_signet;
-  fi;
-}
-
-# ------------- RESTART ---------- #
-restart_all () {
-  stop_all;
-  sleep 30;
-  start_all;
-}
-
-restart_mainnet () {
-  stop_mainnet;
-  sleep 10;
-  start_mainnet;
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_mainnet;
-  fi;
-}
-
-restart_testnet () {
-  stop_testnet;
-  sleep 10;
-  start_testnet;
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_testnet;
-  fi;
-}
-
-restart_signet () {
-  stop_signet;
-  sleep 10;
-  start_signet;
-  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
-    log_signet;
-  fi;
-}
-
 # ------------- VARS, ARGS & SETUP ------------- #
+OS="$(uname)"
+VERSION="$(cat $PWD/doc/version)"
+MAINNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -conf=' | awk '{ print $2}' | tr -d ' ')"
+TESTNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -testnet -conf=' | awk '{ print $2}' | tr -d ' ')"
+SIGNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -signet -conf=' | awk '{ print $2}' | tr -d ' ')"
 
-ARGS=( "$@" )
+ARGS=("$@")
 COMMAND=${ARGS[0]}
-
-if [[ ${ARGS[1]} =~ ^(-n|--network)$ ]]; then
-  NETWORK_FLAG=1
-  NETWORK=$(echo ${ARGS[2]} | sed 's/-//g')
-  LOG=$(echo ${ARGS[3]} | sed 's/-//g')
-  if [[ -z $NETWORK ]]; then
-    echo "$COMMAND err: Network flag -n | --network passed but no network arg detected!"
+if [[ ! $COMMAND =~ ^(version|help|info|setup|disk)$ ]]; then
+  if [[ ${ARGS[1]} =~ ^(-n|--network)$ ]]; then
+    NETWORK_FLAG=1
+    NETWORK=$(echo ${ARGS[2]} | sed 's/-//g')
+    LOG=$(echo ${ARGS[3]} | sed 's/-//g')
+    if [[ -z $NETWORK ]]; then
+      echo "$COMMAND err: Network flag -n | --network passed but no network arg detected!"
+    fi
+  else
+    LOG=$(echo ${ARGS[2]} | sed 's/-//g')
+    NETWORK=$(echo ${ARGS[1]} | sed 's/-//g')
   fi
-else
-  LOG=$(echo ${ARGS[2]} | sed 's/-//g')
-  NETWORK=$(echo ${ARGS[1]} | sed 's/-//g')
 fi
 
-BLOCKCHAIN=$BLOCKCHAIN_DIR
-BITCOIN=$BLOCKCHAIN/.bitcoin
-CONF=$BITCOIN/bitcoin.conf
-DISK_NAME=$(echo $BLOCKCHAIN | sed 's/[a-zA-Z]*\///g')
+if [[ -z $BLOCKCHAIN_DIR ]]; then
+  pretty_echo -s "BLOCKCHAIN_DIR is not set"
+  exit 0
+fi
+
+BITCOIN="$BLOCKCHAIN_DIR/.bitcoin"
+CONF="$BITCOIN/bitcoin.conf"
+DISK_NAME="$(echo $BLOCKCHAIN_DIR | sed 's/[a-zA-Z]*\///g')"
 
 CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
 if [[ -z $CLI_MAN_PAGE ]]; then
@@ -502,9 +60,9 @@ if [[ -e $TESTNET_PID_FILE ]]; then
   TESTNET_PID=$(cat $TESTNET_PID_FILE)
 fi
 
-SIGNET_LOG_FILE=$BITCOIN/signet/debug.log
-SIGNET=$BITCOIN/signet
-SIGNET_PID_FILE=$BITCOIN/signet/bitcoind.pid
+SIGNET_LOG_FILE="$BITCOIN/signet/debug.log"
+SIGNET="$BITCOIN/signet"
+SIGNET_PID_FILE="$BITCOIN/signet/bitcoind.pid"
 if [[ -e $SIGNET_PID_FILE ]]; then
   SIGNET_PID=$(cat $SIGNET_PID_FILE)
 fi
@@ -514,15 +72,530 @@ if [[ ! -z $SHELL_PROFILE ]]; then
   source $SHELL_PROFILE
 fi
 
+print_version() {
+  echo "$VERSION"
+}
+
+man_help() {
+  man bdcli
+}
+
+cli_help() {
+  cat "$PWD/doc/help"
+}
+
+# ------------- SETUP ------------- #
+setup() {
+  SETUP_DIR=${ARGS[1]}
+  INTERACTIVE_SETUP=${ARGS[1]}
+
+  set_shell
+
+  TEST=$(cat $SHELL_PROFILE | grep BLOCKCHAIN_DIR=)
+  if [[ ! -z $TEST ]]; then
+    prompt_setup
+  elif [[ -z $SETUP_DIR && -z $INTERACTIVE_SETUP ]]; then
+    pretty_echo "error: arg/option missing"
+    pretty_echo "non-interactive setup requires path arg"
+    exit 0
+  else
+    if [[ -z $BLOCKCHAIN_DIR ]]; then
+      pretty_echo "please enter path to your blockchain data:"
+      read BLOCKCHAIN_DIR
+      finish_setup
+    else
+      prompt_setup
+    fi
+    finish_setup
+  fi
+
+  if [[ -z $BLOCKCHAIN_DIR ]]; then
+    pretty_echo "error: shell profile may be improperly setup"
+    pretty_echo "debug info"
+    pretty_echo "--------- SHELL: $SHELL"
+    pretty_echo "--------- SHELL_PROFILE: $SHELL_PROFILE"
+    exit 1
+  fi
+
+  if [[ ! -d $BLOCKCHAIN_DIR ]]; then
+    pretty_echo "disk not mounted"
+    pretty_echo "would you like to mount disk at $BLOCKCHAIN_DIR? [y/n]"
+    read DO_MOUNT
+    if [[ $DO_MOUNT =~ ^(y|Y)$ ]]; then
+      case $OS in
+      Darwin)
+        test -z $DISK_NAME && pretty_echo "Please run setup to set your disk name"
+        DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }')
+        diskutil mount $DISK
+        ;;
+      *)
+        pretty_echo "unimplemented auto mount"
+        pretty_echo "please mount disk manually"
+        ;;
+      esac
+    else
+      pretty_echo "ok"
+      pretty_echo "please mount disk manually"
+    fi
+  fi
+
+  pretty_echo "success: bdcli"
+  exit 0
+}
+
+prompt_setup() {
+  pretty_echo "BLOCKCHAIN_DIR set to $BLOCKCHAIN_DIR"
+  pretty_echo "correct? [y/N]"
+  read ANSWER
+  if [[ $ANSWER =~ ^(n|N)$ ]]; then
+    pretty_echo "please enter path to your blockchain data:"
+    read BLOCKCHAIN_DIR
+    # cp $SHELL_PROFILE $SHELL_PROFILE.bak
+    cat $SHELL_PROFILE | sed 's/export BLOCKCHAIN_DIR=.*/export BLOCKCHAIN_DIR=\/Volumes\/bBLOCKCHAIN/g' >$SHELL_PROFILE
+    finish_setup
+  fi
+  exit 0
+}
+
+set_shell() {
+  BASHRC=~/.bashrc
+  BASH_PROFILE=~/.bash_profile
+
+  ZSHRC=~/.zshrc
+  ZSH_PROFILE=~/.zsh_profile
+
+  PROFILE=~/.profile
+
+  if [[ $SHELL == "/bin/bash" ]]; then
+    if [[ -f $BASHRC ]]; then
+      SHELL_PROFILE=$BASHRC
+    fi
+    if [[ -f $BASH_PROFILE ]]; then
+      SHELL_PROFILE=$BASH_PROFILE
+    fi
+  elif [[ $SHELL == "/bin/zsh" ]]; then
+    if [[ -f $ZSHRC ]]; then
+      SHELL_PROFILE=$ZSHRC
+    fi
+    if [[ -f $ZSH_PROFILE ]]; then
+      SHELL_PROFILE=$ZSH_PROFILE
+    fi
+  elif [[ -f $PROFILE ]]; then
+    SHELL_PROFILE=$PROFILE
+  else
+    touch ~/$PROFILE
+    SHELL_PROFILE=$PROFILE
+  fi
+}
+
+finish_setup() {
+  echo $'\n'"export BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR" >>$SHELL_PROFILE
+  source $SHELL_PROFILE
+  pretty_echo "BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR"
+}
+
+mount_unmount() {
+  # TODO: finish additional flags -m, -u, --mount, --unmount
+  COMMAND=$(echo "${ARGS[1]}" | tr -d -)
+  DISK_ANSWER=$(echo "${ARGS[2]}" | tr -d -)
+  
+  case $OS in
+    Darwin) DISK=$(diskutil list | grep $DISK_NAME | awk '{print  $8 }') ;;
+    # TODO: finish Linux OS
+    Linux) TODO ;;
+    *) pretty_echo "unimplemented auto mount for OS: $OS"
+        pretty_echo "please mount disk manually";;
+  esac
+
+  if [[ -z $DISK ]]; then
+    pretty_echo "disk $COMMAND error: disk not found"
+    pretty_echo "are you sure the disk is attached?"
+    exit 1
+  fi
+
+  if [[ -z $BLOCKCHAIN_DIR ]]; then
+    echo "$COMMAND error: BLOCKCHAIN_DIR=$BLOCKCHAIN_DIR: path to external disk missing from env!"
+    pretty_echo "You may need to run 'bdcli setup'"
+    pretty_echo "Would you like to do that?"
+    read SETUP_ANSWER
+    if [[ $SETUP_ANSWER =~ ^(y|Y)$ ]]; then
+      pretty_echo "running setup ..."
+      setup
+    else
+      pretty_echo "ok! please run 'bdcli setup' to set BLOCKCHAIN_DIR dir"
+      pretty_echo "Run bdcli help for assistance"
+    fi
+  fi
+
+  if [[ -z $DISK_ANSWER ]]; then
+    pretty_echo "do you want to $COMMAND the disk at $BLOCKCHAIN_DIR [y/n]"
+    read DISK_ANSWER
+    if [[ $DISK_ANSWER =~ ^(y|Y)$ ]]; then
+      run_disk_utility
+    else
+      pretty_echo "ok"
+      pretty_echo "please $COMMAND disk manually"
+    fi
+  else
+     run_disk_utility
+  fi
+  
+}
+
+run_disk_utility () {
+  diskutil $COMMAND $DISK
+  SUCCESS=$(echo $!)
+  case $SUCCESS in
+  0)
+    pretty_echo "$DISK $COMMAND success"
+    exit 0;;
+  1)
+    pretty_echo "$DISK $COMMAND fail"
+    exit 1;;
+  esac
+}
+
+# ------------- INFO ------------- #
+info() {
+  PATH_FLAG=${ARGS[1]}
+  if [[ $PATH_FLAG =~ ^(-p|--path)$ ]]; then
+    test ! -z $BLOCKCHAIN_DIR && pretty_echo "BLOCKCHAIN_DIR set to $BLOCKCHAIN_DIR" || pretty_echo "BLOCKCHAIN_DIR not set"
+  fi
+
+  if [[ ! -e "$PID_FILE" || ! -e "$TESTNET_PID_FILE" || ! -e "$SIGNET_PID_FILE" ]]; then
+    pretty_echo "no PID files detected"
+    if [[ $NETWORK =~ ^(all)$ ]]; then
+      NETWORK="mainnet, testnet and/or signet"
+    fi
+    pretty_echo "bitcoind does not appear to be running on any network"
+    interactive_start
+    exit 0
+  fi
+  MAINNET_PID_MSG="bitcoind PID $(cat $PID_FILE)"
+  MAINNET_PID_ERR="error: no bitcoind.pid file detected at $BITCOIN/bitcoind.pid"
+  TESTNET_PID_MSG="bitcoind testnet PID $(cat $TESTNET_PID_FILE)"
+  TESTNET_PID_ERR="error: no bitcoind.pid file detected at $BITCOIN/testnet3/bitcoind.pid"
+  SIGNET_PID_MSG="bitcoind signet PID $(cat $SIGNET_PID_FILE)"
+  SIGNET_PID_ERR="error: no bitcoind.pid file detected at $BITCOIN/signet/bitcoind.pid"
+
+  case $NETWORK in
+  all)
+    test -e $PID_FILE && pretty_echo $MAINNET_PID_MSG || pretty_echo $MAINNET_PID_ERR
+    test -e $TESTNET_PID_FILE && pretty_echo $TESTNET_PID_MSG || pretty_echo $TESTNET_PID_ERR
+    test -e $SIGNET_PID_FILE && pretty_echo $SIGNET_PID_MSG || pretty_echo $SIGNET_PID_ERR
+    ;;
+
+  mainnet | "") test -e $PID_FILE && echo "$COMMAND: $MAINNET_PID_MSG" || echo "$COMMAND: $MAINNET_PID_ERR" ;;
+
+  testnet) test -e $TESTNET_PID_FILE && pretty_echo $TESTNET_PID_MSG || pretty_echo $TESTNET_PID_ERR ;;
+
+  signet) test -e $SIGNET_PID_FILE && pretty_echo $SIGNET_PID_MSG || pretty_echo $SIGNET_PID_ERR ;;
+
+  *) pretty_echo "error: network arg missing" ;;
+  esac
+  exit 0
+}
+
+# ------------- CRASH ------------- #
+crash() {
+  test -z $COMMAND && COMMAND="crash"
+  case $NETWORK in
+  all) PID_FILE_TO_CHECK=($PID_FILE $TESTNET_PID_FILE $SIGNET_PID_FILE) ;;
+  mainnet | "") PID_FILE_TO_CHECK="$PID_FILE" ;;
+  testnet) PID_FILE_TO_CHECK="$TESTNET_PID_FILE" ;;
+  signet) PID_FILE_TO_CHECK="$SIGNET_PID_FILE" ;;
+  *)
+    pretty_echo "network arg missing or improperly passed!"
+    exit 1
+    ;;
+  esac
+  # TODO: check for currently running process
+  if [[ -e "$PID_FILE_TO_CHECK" ]]; then
+    pretty_echo -s "possible crash detected! PID file found at $PID_FILE_TO_CHECK"
+    pretty_echo -s "bitcoind may have crashed while running on $NETWORK"
+    pretty_echo "do you want to delete the pid file at $PID_FILE_TO_CHECK? [y/N]"
+    read DELETE
+    if [[ $DELETE =~ ^(y|Y)$ ]]; then
+      pretty_echo -s "deleting ..."
+      rm -rf $PID_FILE_TO_CHECK
+      interactive_start
+    else
+      pretty_echo "aborting!"
+    fi
+  else
+    pretty_echo "no bitcoind.pid file detected at $PID_FILE_TO_CHECK"
+    interactive_start
+  fi
+  exit 0
+
+}
+
+# ------------- LOG ------------- #
+pretty_echo() {
+  if [[ ! -z $1 && $1 == '-s' ]]; then
+    echo "$COMMAND: $2"
+    sleep 1
+  elif [[ ! -z $2 && $2 == '-s' ]]; then
+    echo "$COMMAND: $1"
+    sleep 1
+  else
+    echo "$1"
+  fi
+}
+
+log() {
+  test -z $COMMAND && COMMAND="log"
+  pretty_echo "logging enabled!"
+  case $NETWORK in
+  all) log_all ;;
+  mainnet | "") log_mainnet ;;
+  testnet) log_testnet ;;
+  signet) log_signet ;;
+  *)
+    pretty_echo "network arg missing or improperly passed!"
+    exit 1
+    ;;
+  esac
+}
+
+log_all() {
+  COMMAND="log_all"
+  pretty_echo "logging mainnet $LOG_FILE"
+  pretty_echo "logging testnet $TESTNET_LOG_FILE"
+  pretty_echo "logging signet $SIGNET_LOG_FILE"
+  tail -f $LOG_FILE $TESTNET_LOG_FILE $SIGNET_LOG_FILE
+}
+
+log_mainnet() {
+  COMMAND="log_mainnet"
+  pretty_echo "logging mainnet $LOG_FILE"
+  tail -f $LOG_FILE
+}
+
+log_testnet() {
+  COMMAND="log_testnet"
+  pretty_echo "logging testnet $TESTNET_LOG_FILE"
+  tail -f $TESTNET_LOG_FILE
+}
+
+log_signet() {
+  COMMAND="log_signet"
+  pretty_echo "logging signet $SIGNET_LOG_FILE"
+  tail -f $SIGNET_LOG_FILE
+}
+
+# ------------- START / STOP ------------- #
+start_stop_restart() {
+  FULL="${ARGS[]}"
+  COMMAND_NETWORK="$COMMAND""_""$NETWORK"
+  case $COMMAND_NETWORK in
+  start_all) start_all ;;
+  start_mainnet | start_) start_mainnet ;;
+  start_testnet) start_testnet ;;
+  start_signet) start_signet ;;
+
+  stop_all) stop_all ;;
+  stop_mainnet | stop_) stop_mainnet ;;
+  stop_testnet) stop_testnet ;;
+  stop_signet) stop_signet ;;
+
+  restart_all) restart_all ;;
+  restart_mainnet | restart_) restart_mainnet ;;
+  restart_testnet) restart_bitcoind_testnet ;;
+  restart_signet) restart_bitcoind_signet ;;
+  *)
+    echo "err: COMMAND missing or improperly passed!"
+    exit 1
+    ;;
+  esac
+}
+
+interactive_start() {
+  pretty_echo "start bitcoind? [y/N]"
+  read START_ANSWER
+  if [[ $START_ANSWER =~ ^(y|Y)$ ]]; then
+    if [[ -z $NETWORK ]]; then
+      pretty_echo "which network? [all/mainnet/testnet/signet]"
+      pretty_echo "Note: leave answer blank to start mainnet only"
+      read NETWORK
+      NETWORK=$(echo "$NETWORK" | tr '[:upper:]' '[:lower:]')
+      while [[ ! $NETWORK =~ ^(all|mainnet|testnet|signet)$ ]]; do
+        pretty_echo "error: bad input. please try again [all/mainnet/testnet/signet]"
+        read NETWORK
+        NETWORK=$(echo "$NETWORK" | tr '[:upper:]' '[:lower:]')
+      done
+    fi
+  else
+    pretty_echo "ok"
+    exit 0
+  fi
+
+  pretty_echo "starting bitcoind on $NETWORK ..."
+  start_$NETWORK
+}
+
+# ---- START ---- #
+start_all() {
+  start_mainnet
+  start_testnet
+  start_signet
+}
+
+start_mainnet() {
+  if [[ -e $1 && ! -z $1 ]]; then
+    NETWORK=$1
+  fi
+
+  if [ -e "$PID_FILE" ]; then
+    pretty_echo "Bitcoind.pid file detected. Are you already running bitcoind on mainnet from $BITCOIN? [Y/n]"
+    read START_ANSWER
+    if [[ $START_ANSWER =~ ^(n|N) ]]; then
+      # if [[ ! $NETWORK =~ ^(main|mainnet)$ ]]; then
+      #   NET_CHECK="-$NETWORK"
+      # fi
+      # BITCOIND_PROCESS_TEST=$(ps aux | grep -v 'grep' | grep "bitcoind $NET_CHECK -conf=" | awk '{ print $2 }')
+      # if [[ -z $BITCOIND_PROCESS_TEST ]]; then
+      $(which bitcoind) -conf=$CONF
+      pretty_echo "Running bitcoind from $BITCOIN"
+    else
+      pretty_echo "Bitcoind process detected. Please shut use bdcli restart."
+      exit 0
+    fi
+    # fi
+  else
+    $(which bitcoind) -conf=$CONF
+    pretty_echo "Running bitcoind from $BITCOIN"
+  fi
+  pretty_echo "bitcoind PID: $(cat $PID_FILE)"
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet
+  fi
+}
+
+start_testnet() {
+  if [ ! -e "$TESTNET_PID_FILE" ]; then
+    $(which bitcoind) -testnet -conf=$CONF
+    pretty_echo "running bitcoind testnet from $BITCOIN"
+  else
+    pretty_echo "already running bitcoind testnet from $BITCOIN"
+  fi
+  pretty_echo "bitcoind testnet PID: $(cat $TESTNET_PID_FILE)"
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet
+  fi
+}
+
+start_signet() {
+  if [ ! -e "$SIGNET_PID_FILE" ]; then
+    $(which bitcoind) -signet -conf=$CONF
+    pretty_echo "running bitcoind signet from $BITCOIN"
+  else
+    pretty_echo "already running bitcoind signet from $BITCOIN"
+  fi
+  pretty_echo "bitcoind signet PID: $(cat $SIGNET_PID_FILE)"
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet
+  fi
+}
+
+# ---- STOP ---- #
+stop_all() {
+  stop_mainnet
+  stop_testnet
+  stop_signet
+}
+
+stop_mainnet() {
+  if [ -e "$PID_FILE" ]; then
+    /usr/local/bin/bitcoin-cli -conf=$CONF stop
+    # do check for bitcoind still starting
+    # if kill -9, must remove .pid files
+    echo "Stopping bitcoind from $BITCOIN"
+    echo "bitcoind PID $(cat $PID_FILE) stopped!"
+  else
+    echo "$PID_FILE file not detected! Are you sure bitcoind is running on mainnet?"
+  fi
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet
+  fi
+}
+
+stop_testnet() {
+  if [ -e "$TESTNET_PID_FILE" ]; then
+    /usr/local/bin/bitcoin-cli -testnet -conf=$CONF stop
+    # do check for bitcoind still starting
+    # if kill -9, must remove .pid files
+    pretty_echo "Stopping bitcoind testnet from $BITCOIN"
+    pretty_echo "bitcoind testnet PID $(cat $TESTNET_PID_FILE) stopped!"
+  else
+    pretty_echo "$TESTNET_PID_FILE file not detected! Are you sure bitcoind is running on testnet?"
+  fi
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet
+  fi
+}
+
+stop_signet() {
+  if [ -e "$SIGNET_PID_FILE" ]; then
+    /usr/local/bin/bitcoin-cli -signet -conf=$CONF stop
+    # do check for bitcoind still starting
+    # if kill -9, must remove .pid files
+    pretty_echo "Stopping bitcoind signet from $BITCOIN"
+    pretty_echo "bitcoind signet PID $(cat $SIGNET_PID_FILE) stopped!"
+  else
+    pretty_echo "$SIGNET_PID_FILE file not detected! Are you sure bitcoind is running on signet?"
+  fi
+
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet
+  fi
+}
+
+# ------------- RESTART ---------- #
+restart_all() {
+  stop_all
+  sleep 30
+  start_all
+}
+
+restart_mainnet() {
+  stop_mainnet
+  sleep 10
+  start_mainnet
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_mainnet
+  fi
+}
+
+restart_testnet() {
+  stop_testnet
+  sleep 10
+  start_testnet
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_testnet
+  fi
+}
+
+restart_signet() {
+  stop_signet
+  sleep 10
+  start_signet
+  if [[ ! -z "$LOG" && "$LOG" =~ ^(l|log)$ ]]; then
+    log_signet
+  fi
+}
+
 case $COMMAND in
-  version) print_version;;
-  help) show_help;;
-  man) open_man;;
-  info) info;;
-  crash) crash;;
-  setup) setup;;
-  log) log;;
-  disk) mount_unmount;;
-  start|stop|restart) start_stop_restart;;
-  *) echo "err: no command passed";;
+  version | --version | -v) print_version ;;
+  help | --help | -h) cli_help ;;
+  info | --info | -i) info ;;
+  man) man_help ;;
+  setup) setup ;;
+  log) log ;;
+  crash) crash ;;
+  disk) mount_unmount ;;
+  start | stop | restart) start_stop_restart ;;
+  *) pretty_echo 'err: command not recognized - use "bdcli help" to see commands' ;;
 esac

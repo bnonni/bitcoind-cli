@@ -16,55 +16,24 @@ pretty_echo () {
 }
 
 
-OS=$(uname)
+OS="$(uname)"
 ARGS=($@)
-LOCAL_BIN=/usr/local/bin
-BITCOIND_CLI=$PWD/bitcoind-cli
-BITCOIND_CLI_PATH=$LOCAL_BIN/bitcoind-cli
+LOCAL_BIN="/usr/local/bin"
+BITCOIND_CLI="$PWD/bdcli"
+BITCOIND_CLI_PATH="$LOCAL_BIN/bdcli"
 
-LOCAL_ETC=/usr/local/etc
-BACKUP_FOLDER=$LOCAL_ETC/bak
-BACKUP_FILE=bitcoind-cli.bak
-BACKUP_FILE_FOLER_PATH=$BACKUP_FOLDER/$BACKUP_FILE
+LOCAL_ETC="/usr/local/etc"
+BACKUP_FOLDER="$LOCAL_ETC/bak"
+BACKUP_FILE="bdcli.bak"
+BACKUP_FILE_FOLER_PATH="$BACKUP_FOLDER/$BACKUP_FILE"
 
-LOCAL_MAN=/usr/local/share/man/man1
-MAN_FILE=bitcoind-cli.1
-MAN_FILE_FOLER_PATH=$LOCAL_MAN_FOLDER/$MAN_FILE
+LOCAL_MAN="/usr/local/share/man/man1"
+MAN_FILE="$PWD/doc/bdcli.1"
+MAN_FILE_FOLER_PATH="$LOCAL_MAN_FOLDER/$MAN_FILE"
 
-echo '\033[38;5;208m -----------------------------------------------------------------------------------------------------------------\033[0m'
-# echo '\033[38;5;208m|                     __       __  ________  __         ______    ______   __       __  ________                  |\033[0m'
-# echo '\033[38;5;208m|                    /  |  _  /  |/        |/  |       /      \  /      \ /  \     /  |/        |                 |\033[0m'
-# echo '\033[38;5;208m|                    $$ | / \ $$ |$$$$$$$$/ $$ |      /$$$$$$  |/$$$$$$  |$$  \   /$$ |$$$$$$$$/                  |\033[0m'
-# echo '\033[38;5;208m|                    $$ |/$  \$$ |$$ |__    $$ |      $$ |  $$/ $$ |  $$ |$$$  \ /$$$ |$$ |__                     |\033[0m'
-# echo '\033[38;5;208m|                    $$ /$$$  $$ |$$    |   $$ |      $$ |      $$ |  $$ |$$$$  /$$$$ |$$    |                    |\033[0m'
-# echo '\033[38;5;208m|                    $$ $$/$$ $$ |$$$$$/    $$ |      $$ |   __ $$ |  $$ |$$ $$ $$/$$ |$$$$$/                     |\033[0m'
-# echo '\033[38;5;208m|                    $$$$/  $$$$ |$$ |_____ $$ |_____ $$ \__/  |$$ \__$$ |$$ |$$$/ $$ |$$ |_____                  |\033[0m'
-# echo '\033[38;5;208m|                    $$$/    $$$ |$$       |$$       |$$    $$/ $$    $$/ $$ | $/  $$ |$$       |                 |\033[0m'
-# echo '\033[38;5;208m|                    $$/      $$/ $$$$$$$$/ $$$$$$$$/  $$$$$$/   $$$$$$/  $$/      $$/ $$$$$$$$/                  |\033[0m'
+sh $PWD/doc/welcome.sh
 
-# echo '\033[38;5;208m|                                               __                                                                |\033[0m'
-# echo '\033[38;5;208m|                                              /  |                                                               |\033[0m'
-# echo '\033[38;5;208m|                                             _$$ |_     ______                                                   |\033[0m'
-# echo '\033[38;5;208m|                                            / $$   |   /      \                                                  |\033[0m'
-# echo '\033[38;5;208m|                                            $$$$$$/   /$$$$$$  |                                                 |\033[0m'
-# echo '\033[38;5;208m|                                              $$ | __ $$ |  $$ |                                                 |\033[0m'
-# echo '\033[38;5;208m|                                              $$ |/  |$$ \__$$ |                                                 |\033[0m'
-# echo '\033[38;5;208m|                                              $$  $$/ $$    $$/                                                  |\033[0m'
-# echo '\033[38;5;208m|                                               $$$$/   $$$$$$/                                                   |\033[0m'
-
-echo '\033[38;5;208m|  _______   ______  ________  ______    ______   ______  __    __  _______            ______   __        ______  |\033[0m'
-echo '\033[38;5;208m| /       \ /      |/        |/      \  /      \ /      |/  \  /  |/       \          /      \ /  |      /      | |\033[0m'
-echo '\033[38;5;208m| $$$$$$$  |$$$$$$/ $$$$$$$$//$$$$$$  |/$$$$$$  |$$$$$$/ $$  \ $$ |$$$$$$$  |        /$$$$$$  |$$ |      $$$$$$/  |\033[0m'
-echo '\033[38;5;208m| $$ |__$$ |  $$ |     $$ |  $$ |  $$/ $$ |  $$ |  $$ |  $$$  \$$ |$$ |  $$ | ______ $$ |  $$/ $$ |        $$ |   |\033[0m'
-echo '\033[38;5;208m| $$    $$<   $$ |     $$ |  $$ |      $$ |  $$ |  $$ |  $$$$  $$ |$$ |  $$ |/      |$$ |      $$ |        $$ |   |\033[0m'
-echo '\033[38;5;208m| $$$$$$$  |  $$ |     $$ |  $$ |   __ $$ |  $$ |  $$ |  $$ $$ $$ |$$ |  $$ |$$$$$$/ $$ |   __ $$ |        $$ |   |\033[0m'
-echo '\033[38;5;208m| $$ |__$$ | _$$ |_    $$ |  $$ \__/  |$$ \__$$ | _$$ |_ $$ |$$$$ |$$ |__$$ |        $$ \__/  |$$ |_____  _$$ |_  |\033[0m'
-echo '\033[38;5;208m| $$    $$/ / $$   |   $$ |  $$    $$/ $$    $$/ / $$   |$$ | $$$ |$$    $$/         $$    $$/ $$       |/ $$   | |\033[0m'
-echo '\033[38;5;208m| $$$$$$$/  $$$$$$/    $$/    $$$$$$/   $$$$$$/  $$$$$$/ $$/   $$/ $$$$$$$/           $$$$$$/  $$$$$$$$/ $$$$$$/  |\033[0m'
-echo '\033[38;5;208m -----------------------------------------------------------------------------------------------------------------\033[0m'
-echo ""
-
-pretty_echo -s "welcome to the bitcoind-cli installer!"
+pretty_echo -s "welcome to the bdcli installer!"
 
 BASHRC=~/.bashrc
 BASH_PROFILE=~/.bash_profile
@@ -103,18 +72,18 @@ fi
 
 SHOW_HELP=$(echo "${ARGS[0]}" | tr -d -)
 
-pretty_echo -s "installing bitcoind-cli ..."
+pretty_echo -s "installing bdcli ..."
 cp $BITCOIND_CLI $LOCAL_BIN
-pretty_echo -s "bitcoind-cli installed at $BITCOIND_CLI_PATH"
+pretty_echo -s "bdcli installed at $BITCOIND_CLI_PATH"
 
-pretty_echo -s "Backing up bitcoind-cli ..."
+pretty_echo -s "Backing up bdcli ..."
 if [[ ! -e $BACKUP_FOLDER ]]; then 
   mkdir $BACKUP_FOLDER
 fi
 cp $BITCOIND_CLI_PATH $BACKUP_FILE_FOLER_PATH
-pretty_echo -s "bitcoind-cli backed up to $BACKUP_FILE_FOLER_PATH"
+pretty_echo -s "bdcli backed up to $BACKUP_FILE_FOLER_PATH"
 
-pretty_echo -s "installing bitcoind-cli manual page ..."
+pretty_echo -s "installing bdcli manual page ..."
 # if [[ ! -e $LOCAL_MAN_FOLDER ]]; then 
 #   mkdir $LOCAL_MAN_FOLDER
 # fi
@@ -122,15 +91,15 @@ cp $MAN_FILE $LOCAL_MAN
 pretty_echo -s "$MAN_FILE backed up to $LOCAL_MAN"
 
 if [[ $SHOW_HELP =~ ^(h|H|help)$ ]]; then
-  bitcoind-cli help
+  bdcli help
 elif [[ -z $SHOW_HELP ]]; then
-  pretty_echo -s "would you like to see the bitcoind-cli usage guide? [y|N]"
+  pretty_echo -s "would you like to see the bdcli usage guide? [y|N]"
   read SHOW_HELP
   if [[ $SHOW_HELP =~ ^(y|Y) ]]; then
-    man bitcoind-cli
+    man bdcli
   fi
   exit 0
 else
-  pretty_echo -s "for help with using the cli, run bitcoind-cli help"
+  pretty_echo -s "for help with using the cli, run bdcli help"
   exit 0
 fi

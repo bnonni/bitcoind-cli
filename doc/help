@@ -36,36 +36,36 @@ EXAMPLES:
 
          - info: print the PIDs for the bitcoind processes
          % bdcli info -all
-                 [-all | -testnet | -mainnet | -signet]
-                 [-n | --network all | mainnet | testnet | signet]
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
 
          - disk: interact with an external disk housing blockchain data
          % bdcli disk mount
-                 [mount | unmount]
+                [mount | unmount]
          
          - crash: used for detecting an improper shutdown of bitcoind leaving behind a .pid file
          % bdcli crash
 
          - log: print the debug.log files for bitcoind using tail command
          % bdcli log -all
-                 [-all | -testnet | -mainnet | -signet]
-                 [-n | --network all | mainnet | testnet | signet]
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
 
          - start: start bitcoind, default: all & logging disabled
          % bdcli start -all
-                 [-all | -testnet | -mainnet | -signet]
-                 [-n | --network all | mainnet | testnet | signet]
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
                 [-l | -log | --log]
 
          - stop: stop bitcoind, default: all & logging disabled
          % bdcli stop -all
-                 [-all | -testnet | -mainnet | -signet]
-                 [-n | --network all | mainnet | testnet | signet]
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
 
          - restart: restart bitcoind, default: all & logging disabled
          % bdcli restart -all
-                 [-all | -testnet | -mainnet | -signet]
-                 [-n | --network all | mainnet | testnet | signet]
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
 
 VERSION:
         bdcli 0.0.3
