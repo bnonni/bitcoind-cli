@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-VERSION="v0.0.3"
+VERSION="$(cat $PWD/version | awk -F ': ' '{print $2}')"
 COMMAND="install"
 
 OS=$(uname)
