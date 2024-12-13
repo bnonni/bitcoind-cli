@@ -1,72 +1,4 @@
 #!/usr/bin/env bash
-# ------------- VARS, ARGS & SETUP ------------- #
-OS="$(uname)"
-VERSION="$(cat $PWD/doc/version)"
-MAINNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -conf=' | awk '{ print $2}' | tr -d ' ')"
-TESTNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -testnet -conf=' | awk '{ print $2}' | tr -d ' ')"
-SIGNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -signet -conf=' | awk '{ print $2}' | tr -d ' ')"
-
-ARGS=("$@")
-COMMAND=${ARGS[0]}
-if [[ ! $COMMAND =~ ^(version|help|info|setup|disk)$ ]]; then
-  if [[ ${ARGS[1]} =~ ^(-n|--network)$ ]]; then
-    NETWORK_FLAG=1
-    NETWORK=$(echo ${ARGS[2]} | sed 's/-//g')
-    LOG=$(echo ${ARGS[3]} | sed 's/-//g')
-    if [[ -z $NETWORK ]]; then
-      echo "$COMMAND err: Network flag -n | --network passed but no network arg detected!"
-    fi
-  else
-    LOG=$(echo ${ARGS[2]} | sed 's/-//g')
-    NETWORK=$(echo ${ARGS[1]} | sed 's/-//g')
-  fi
-fi
-
-if [[ -z $BLOCKCHAIN_DIR ]]; then
-  pretty_echo -s "BLOCKCHAIN_DIR is not set"
-  exit 0
-fi
-
-BITCOIN="$BLOCKCHAIN_DIR/.bitcoin"
-CONF="$BITCOIN/bitcoin.conf"
-DISK_NAME="$(echo $BLOCKCHAIN_DIR | sed 's/[a-zA-Z]*\///g')"
-
-CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
-if [[ -z $CLI_MAN_PAGE ]]; then
-  pretty_echo "err: bdcli manual missing"
-  pretty_echo "Did you run doc/install.sh? [y/N]"
-  read MAN_INSTALL_ANSWER
-  if [[ $MAN_INSTALL_ANSWER =~ ^(n|N)$ ]]; then
-    pretty_echo "Would you like to install bdcli? [y/N]"
-    read CLI_INSTALL_ANSWER
-    if [[ $CLI_INSTALL_ANSWER =~ ^(y|Y)$ ]]; then
-      sh "$BITCOIND_CLI_REPO/doc/install.sh"
-    else
-      pretty_echo "ok! please install bdcli manually to continue"
-    fi
-  fi
-fi
-
-LOG_FILE=$BITCOIN/debug.log
-PID_FILE=$BITCOIN/bitcoind.pid
-if [[ -e $PID_FILE ]]; then
-  PID=$(cat $PID_FILE)
-fi
-
-TESTNET_LOG_FILE=$BITCOIN/testnet3/debug.log
-TESTNET=$BITCOIN/testnet3
-TESTNET_PID_FILE=$BITCOIN/testnet3/bitcoind.pid
-if [[ -e $TESTNET_PID_FILE ]]; then
-  TESTNET_PID=$(cat $TESTNET_PID_FILE)
-fi
-
-SIGNET_LOG_FILE="$BITCOIN/signet/debug.log"
-SIGNET="$BITCOIN/signet"
-SIGNET_PID_FILE="$BITCOIN/signet/bitcoind.pid"
-if [[ -e $SIGNET_PID_FILE ]]; then
-  SIGNET_PID=$(cat $SIGNET_PID_FILE)
-fi
-
 # ------------- COMMAND CHECK ------------- #
 if [[ ! -z $SHELL_PROFILE ]]; then
   source $SHELL_PROFILE
@@ -81,7 +13,78 @@ man_help() {
 }
 
 cli_help() {
-  cat "$PWD/doc/help"
+  echo '''NAME:
+     bdcli: additional control scripts for bitcoind
+
+COMMAND:
+        bdcli: additional control scripts for bitcoind
+
+SUBCOMMANDS:
+            help:    show help
+            setup:   setup cli pathing
+            info:    show PIDs
+            disk:    interact with ext disk
+            log:     tail bitcoind logs
+            start:   start bitcoind
+            stop:    stop bitcoind
+            restart: restart bitcoind (stop + start)
+
+USAGE:
+      % bdcli [subcommand] [flags] [options]
+      % bdcli help
+      % bdcli setup [BLOCKCHAIN_DIR] [-i|--interactive]
+      % bdcli info -[all|mainnet|testnet|signet]
+      %            [-n|--network] [all|mainnet|testnet|signet]
+      % bdcli disk [-m|mount|-mount|--mount] [-u|unmount|-unmount|--unmount]
+      % bdcli log [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>]
+      % bdcli disk [mount | unmount]
+      % bdcli crash
+      % bdcli start [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bdcli stop [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+      % bdcli restart [-all | -mainnet | -testnet | -signet] [-n | --network <all | mainnet | testnet | signet>] [-l | -log | --log]
+
+EXAMPLES:
+         - help: print info about the command, subcommands, usage and examples
+         % bdcli help
+
+         - setup: set the path to your blockchain data in shell profile
+         % bdcli setup /Volumes/BLOCKCHAIN
+
+         - info: print the PIDs for the bitcoind processes
+         % bdcli info -all
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
+
+         - disk: interact with an external disk housing blockchain data
+         % bdcli disk mount
+                [mount | unmount]
+
+         - crash: used for detecting an improper shutdown of bitcoind leaving behind a .pid file
+         % bdcli crash
+
+         - log: print the debug.log files for bitcoind using tail command
+         % bdcli log -all
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
+
+         - start: start bitcoind, default: all & logging disabled
+         % bdcli start -all
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
+                [-l | -log | --log]
+
+         - stop: stop bitcoind, default: all & logging disabled
+         % bdcli stop -all
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
+
+         - restart: restart bitcoind, default: all & logging disabled
+         % bdcli restart -all
+                [-all | -testnet | -mainnet | -signet]
+                [-n | --network all | mainnet | testnet | signet]
+
+VERSION:
+        bdcli 0.0.4'''
 }
 
 # ------------- SETUP ------------- #
@@ -386,7 +389,6 @@ log_signet() {
 
 # ------------- START / STOP ------------- #
 start_stop_restart() {
-  FULL="${ARGS[]}"
   COMMAND_NETWORK="$COMMAND""_""$NETWORK"
   case $COMMAND_NETWORK in
   start_all) start_all ;;
@@ -586,6 +588,74 @@ restart_signet() {
     log_signet
   fi
 }
+
+# ------------- VARS, ARGS & SETUP ------------- #
+OS="$(uname)"
+VERSION="bdcli 0.0.4"
+MAINNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -conf=' | awk '{ print $2}' | tr -d ' ')"
+TESTNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -testnet -conf=' | awk '{ print $2}' | tr -d ' ')"
+SIGNET_PROCESS="$(ps aux | grep '/usr/local/bin/bitcoind -signet -conf=' | awk '{ print $2}' | tr -d ' ')"
+
+ARGS=("$@")
+COMMAND="${ARGS[0]}"
+if [[ ! $COMMAND =~ ^(version|help|info|setup|disk)$ ]]; then
+  if [[ ${ARGS[1]} =~ ^(-n|--network)$ ]]; then
+    NETWORK_FLAG=1
+    NETWORK=$(echo ${ARGS[2]} | sed 's/-//g')
+    LOG=$(echo ${ARGS[3]} | sed 's/-//g')
+    if [[ -z $NETWORK ]]; then
+      echo "$COMMAND err: Network flag -n | --network passed but no network arg detected!"
+    fi
+  else
+    LOG=$(echo ${ARGS[2]} | sed 's/-//g')
+    NETWORK=$(echo ${ARGS[1]} | sed 's/-//g')
+  fi
+fi
+
+if [[ -z $BLOCKCHAIN_DIR ]]; then
+  pretty_echo -s "BLOCKCHAIN_DIR is not set"
+  exit 0
+fi
+
+BITCOIN="$BLOCKCHAIN_DIR/.bitcoin"
+CONF=$BITCOIN/bitcoin.conf
+DISK_NAME="$(echo $BLOCKCHAIN_DIR | sed 's/[a-zA-Z]*\///g')"
+
+CLI_MAN_PAGE=$(test -z $BITCOIND_CLI_MAN_PAGE && echo "/usr/local/share/man/man1" || echo $BITCOIND_CLI_MAN_PAGE)
+if [[ -z $CLI_MAN_PAGE ]]; then
+  pretty_echo "err: bdcli manual missing"
+  pretty_echo "Did you run doc/install.sh? [y/N]"
+  read MAN_INSTALL_ANSWER
+  if [[ $MAN_INSTALL_ANSWER =~ ^(n|N)$ ]]; then
+    pretty_echo "Would you like to install bdcli? [y/N]"
+    read CLI_INSTALL_ANSWER
+    if [[ $CLI_INSTALL_ANSWER =~ ^(y|Y)$ ]]; then
+      sh "$BITCOIND_CLI_REPO/doc/install.sh"
+    else
+      pretty_echo "ok! please install bdcli manually to continue"
+    fi
+  fi
+fi
+
+LOG_FILE=$BITCOIN/debug.log
+PID_FILE=$BITCOIN/bitcoind.pid
+if [[ -e $PID_FILE ]]; then
+  PID=$(cat $PID_FILE)
+fi
+
+TESTNET_LOG_FILE=$BITCOIN/testnet3/debug.log
+TESTNET=$BITCOIN/testnet3
+TESTNET_PID_FILE=$BITCOIN/testnet3/bitcoind.pid
+if [[ -e $TESTNET_PID_FILE ]]; then
+  TESTNET_PID=$(cat $TESTNET_PID_FILE)
+fi
+
+SIGNET_LOG_FILE="$BITCOIN/signet/debug.log"
+SIGNET="$BITCOIN/signet"
+SIGNET_PID_FILE="$BITCOIN/signet/bitcoind.pid"
+if [[ -e $SIGNET_PID_FILE ]]; then
+  SIGNET_PID=$(cat $SIGNET_PID_FILE)
+fi
 
 case $COMMAND in
   version | --version | -v) print_version ;;

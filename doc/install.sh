@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-VERSION="$(cat $PWD/version | awk -F ': ' '{print $2}')"
+VERSION="$(cat $PWD/doc/version)"
 COMMAND="install"
 
 OS=$(uname)
@@ -33,7 +33,7 @@ pretty_echo() {
   fi
 }
 
-sh $PWD/welcome.sh
+sh $PWD/doc/welcome.sh
 
 pretty_echo -s "welcome to the bdcli installer!"
 
@@ -75,8 +75,6 @@ auto_set_profile() {
     pretty_echo -s "failed to set shell profile"
     manual_set_profile
   fi
-  echo "export SHELL_PROFILE=$SHELL_PROFILE"$'\n' >>$SHELL_PROFILE
-  source $SHELL_PROFILE
 }
 
 manual_set_profile() {
@@ -87,24 +85,6 @@ manual_set_profile() {
   read SHELL_PROFILE
   pretty_echo -s "shell profile set to $SHELL_PROFILE"
 }
-
-# TODO: fix this
-# check_env_vars() {
-#   COMMAND="check_env_vars"
-#   TEST_BDCLI_REPO=$(cat $SHELL_PROFILE | grep BDCLI_REPO=)
-#   TEST_BDCLI_MAN=$(cat $SHELL_PROFILE | grep BDCLI_MAN_PAGE=)
-#   if [[ -z $TEST_BDCLI_REPO ]]; then
-#     echo "export BDCLI_REPO=$PWD"$'\n' >>$SHELL_PROFILE
-#   fi
-#   if [[ -z $TEST_BDCLI_MAN ]]; then
-#     echo "export BDCLI_MAN_PAGE=$MAN_FILE_FOLDER_PATH"$'\n' >>$SHELL_PROFILE
-#   fi
-#   source $SHELL_PROFILE
-#   pretty_echo -s "Added the following values to $SHELL_PROFILE:"
-#   pretty_echo "export SHELL_PROFILE=$SHELL_PROFILE"
-#   pretty_echo "BDCLI_REPO=$BDCLI_REPO"
-#   pretty_echo "TEST_BDCLI_MAN=$TEST_BDCLI_MAN"
-# }
 
 install_bdcli() {
   pretty_echo -s "installing bdcli ..."
